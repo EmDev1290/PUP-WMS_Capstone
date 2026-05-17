@@ -99,7 +99,10 @@
             </button>
         </div>
     </div>
-    <div id="header-prog-display" class="hidden md:block text-sm font-bold text-gray-400 italic text-right"></div>
+    <div class="hidden md:flex flex-col items-end text-right text-sm font-bold text-gray-400 italic space-y-1">
+        <div id="header-time" class="text-xs text-slate-500">00:00:00</div>
+        <div id="header-prog-display"></div>
+    </div>
 </header>
 
             <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
@@ -570,6 +573,8 @@ function initUI() {
     const totalUnits = State.db.loads.filter(l => l.program === State.activeProgram).reduce((sum, l) => sum + (l.units || 3), 0);
     document.getElementById('dash-total-units').innerText = `${totalUnits}/45`;
     document.getElementById('header-prog-display').innerText = State.activeProgram;
+    updateHeaderTime();
+    if (!headerTimeInterval) headerTimeInterval = setInterval(updateHeaderTime, 1000);
 
     renderSYDropdown(); // Added this call
     // Initialize semester and faculty type filters
@@ -673,6 +678,17 @@ function onSubjectChange() {
 // --- RESOURCE MANAGEMENT ---
 let currentResType = "";
 let currentLoadEditId = null;
+let headerTimeInterval = null;
+
+function updateHeaderTime() {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const clock = document.getElementById('header-time');
+    if (clock) clock.innerText = `${hours}:${minutes}:${seconds}`;
+}
+
 function openResourceModal(type) {
     currentResType = type;
     document.getElementById('res-modal-title').innerText = `Add New ${type}`;
