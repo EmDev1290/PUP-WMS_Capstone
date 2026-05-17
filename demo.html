@@ -17,6 +17,10 @@
         .vacant-slot { background: repeating-linear-gradient(45deg, #f9fafb, #f9fafb 10px, #f3f4f6 10px, #f3f4f6 20px); }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #ddd; border-radius: 10px; }
+        /* Fullscreen calendar mode: hide sidebar and expand main area */
+        .calendar-fullscreen aside { display: none !important; }
+        .calendar-fullscreen main { margin-left: 0 !important; width: 100% !important; }
+        .calendar-fullscreen #app { height: 100vh; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -63,6 +67,7 @@
                 <button onclick="navTo('management')" id="nav-management" class="sidebar-item w-full flex items-center space-x-3 p-3 rounded-lg text-sm transition-all"><i data-lucide="database" class="w-4 h-4"></i><span>Program Resources</span></button>
                 <button onclick="navTo('loading')" id="nav-loading" class="sidebar-item w-full flex items-center space-x-3 p-3 rounded-lg text-sm transition-all"><i data-lucide="users" class="w-4 h-4"></i><span>Faculty Loading</span></button>
                 <button onclick="navTo('sections')" id="nav-sections" class="sidebar-item w-full flex items-center space-x-3 p-3 rounded-lg text-sm transition-all"><i data-lucide="calendar" class="w-4 h-4"></i><span>Section Timetables</span></button>
+                <button onclick="navTo('rooms')" id="nav-rooms" class="sidebar-item w-full flex items-center space-x-3 p-3 rounded-lg text-sm transition-all"><i data-lucide="map-pin" class="w-4 h-4"></i><span>Room Schedules</span></button>
                 
                 <div class="text-[10px] uppercase text-red-300 font-bold mt-8 mb-2 px-2 tracking-widest flex items-center justify-between">
                     <span>Active Programs</span>
@@ -86,7 +91,7 @@
         </select>
         <div class="h-6 w-px bg-gray-200"></div>
         <div class="flex items-center space-x-2">
-            <select id="sy-selector" class="text-xs font-bold text-gray-500 border-none bg-transparent focus:ring-0">
+            <select id="sy-selector" onchange="renderRoomSchedulePreview()" class="text-xs font-bold text-gray-500 border-none bg-transparent focus:ring-0">
                 <!-- Dynamically filled -->
             </select>
             <button onclick="openSYModal()" class="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-red-800 transition">
@@ -109,6 +114,11 @@
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 border-b-4 border-b-red-800">
                             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Active Faculty</p>
                             <p id="dash-prof-count" class="text-3xl font-bold">0</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 border-b-4 border-b-purple-500">
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Total Units Assigned</p>
+                            <p id="dash-total-units" class="text-3xl font-bold text-purple-600">0/45</p>
+                            <p class="text-[8px] text-gray-400 mt-1">Weekly Capacity</p>
                         </div>
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 border-b-4 border-b-yellow-500">
                             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Active Programs</p>
@@ -142,8 +152,15 @@
                                     <button onclick="openResourceModal('Professor')" class="text-xs font-bold text-blue-600 hover:underline">Add Faculty</button>
                                 </div>
                                 <h3 class="font-bold text-lg mb-1">Faculty Members</h3>
-                                <p class="text-xs text-gray-400 mb-4 italic">Teaching staff list.</p>
-                                <div id="list-profs" class="space-y-2 max-h-80 overflow-y-auto pr-2 custom-scrollbar"></div>
+                                <p class="text-xs text-gray-400 mb-2 italic">Teaching staff list.</p>
+                                <input id="fac-search" type="text" placeholder="Search faculty..." onkeyup="refreshManagementLists()" class="w-full p-2 border rounded-lg text-xs mb-3 bg-gray-50 outline-none focus:ring-2 focus:ring-blue-700">
+                                <div class="flex gap-2 mb-4 flex-wrap" id="faculty-type-filter">
+                                    <button id="fac-all" onclick="setFacultyTypeFilter('All')" class="px-3 py-1 text-[9px] font-bold rounded-lg border border-gray-300 hover:border-blue-700 transition">All</button>
+                                    <button id="fac-parttime" onclick="setFacultyTypeFilter('Part-Time')" class="px-3 py-1 text-[9px] font-bold rounded-lg border border-gray-300 hover:border-blue-700 transition">Part-Time</button>
+                                    <button id="fac-regular" onclick="setFacultyTypeFilter('Regular')" class="px-3 py-1 text-[9px] font-bold rounded-lg border border-gray-300 hover:border-blue-700 transition">Regular</button>
+                                    <button id="fac-designee" onclick="setFacultyTypeFilter('Designee')" class="px-3 py-1 text-[9px] font-bold rounded-lg border border-gray-300 hover:border-blue-700 transition">Designee</button>
+                                </div>
+                                <div id="list-profs" class="space-y-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar"></div>
                             </div>
                         </div>
 
@@ -154,8 +171,15 @@
                                     <button onclick="openResourceModal('Subject')" class="text-xs font-bold text-amber-600 hover:underline">Add Subject</button>
                                 </div>
                                 <h3 class="font-bold text-lg mb-1">Course Curriculum</h3>
-                                <p class="text-xs text-gray-400 mb-4 italic">Official program subjects.</p>
-                                <div id="list-subjects" class="space-y-2 max-h-80 overflow-y-auto pr-2 custom-scrollbar"></div>
+                                <p class="text-xs text-gray-400 mb-2 italic">Official program subjects.</p>
+                                <input id="subj-search" type="text" placeholder="Search subjects..." onkeyup="refreshManagementLists()" class="w-full p-2 border rounded-lg text-xs mb-3 bg-gray-50 outline-none focus:ring-2 focus:ring-amber-700">
+                                <div class="flex gap-2 mb-4 flex-wrap" id="subject-sem-filter">
+                                    <button id="sem-all" onclick="setSubjectSemesterFilter('All')" class="px-3 py-1 text-[9px] font-bold rounded-lg border border-gray-300 hover:border-red-700 transition">All</button>
+                                    <button id="sem-first" onclick="setSubjectSemesterFilter('First Semester')" class="px-3 py-1 text-[9px] font-bold rounded-lg border border-gray-300 hover:border-red-700 transition">1st Sem</button>
+                                    <button id="sem-second" onclick="setSubjectSemesterFilter('Second Semester')" class="px-3 py-1 text-[9px] font-bold rounded-lg border border-gray-300 hover:border-red-700 transition">2nd Sem</button>
+                                    <button id="sem-summer" onclick="setSubjectSemesterFilter('Summer Term')" class="px-3 py-1 text-[9px] font-bold rounded-lg border border-gray-300 hover:border-red-700 transition">Summer</button>
+                                </div>
+                                <div id="list-subjects" class="space-y-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar"></div>
                             </div>
                         </div>
 
@@ -197,15 +221,39 @@
                 <!-- SECTION TIMETABLES SECTION -->
                 <section id="sec-sections" class="hidden space-y-6">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 rounded-2xl border border-gray-100 gap-4">
-                        <div class="flex items-center space-x-3">
+                                <div class="flex items-center space-x-3">
                             <label class="text-[10px] font-bold text-gray-400 uppercase">Select Section:</label>
                             <select id="view-section-select" onchange="renderTimetable()" class="p-2 border rounded-lg font-bold text-sm text-red-800 outline-none"></select>
                         </div>
-                        <button onclick="exportSectionTimetable()" class="px-4 py-2 border-2 border-red-800 text-red-800 rounded-lg text-xs font-bold hover:bg-red-50 flex items-center">
-                            <i data-lucide="download-cloud" class="w-3 h-3 mr-2"></i> Export Section Schedule
-                        </button>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="exportSectionTimetable()" class="px-4 py-2 border-2 border-red-800 text-red-800 rounded-lg text-xs font-bold hover:bg-red-50 flex items-center">
+                                <i data-lucide="download-cloud" class="w-3 h-3 mr-2"></i> Export Section Schedule
+                            </button>
+                            <button id="toggle-fullcal" onclick="toggleCalendarFullscreen('sections')" title="Fullscreen" class="w-8 h-8 flex items-center justify-center rounded border text-slate-600 hover:bg-gray-100">
+                                <i data-lucide="maximize" class="w-4 h-4"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div id="timetable-container" class="grid grid-cols-1 md:grid-cols-7 gap-3"></div>
+                    <div id="timetable-container" class="w-full"></div>
+                </section>
+
+                <!-- ROOM SCHEDULES SECTION -->
+                <section id="sec-rooms" class="hidden space-y-6">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 rounded-2xl border border-gray-100 gap-4">
+                        <div class="flex items-center space-x-3">
+                            <label class="text-[10px] font-bold text-gray-400 uppercase">Select Room:</label>
+                            <select id="view-room-select" onchange="renderRoomSchedulePreview()" class="p-2 border rounded-lg font-bold text-sm text-red-800 outline-none"></select>
+                        </div>
+                        <div class="flex flex-wrap gap-2 items-center">
+                            <button onclick="exportRoomSchedule()" class="px-4 py-2 border-2 border-slate-800 text-slate-800 rounded-lg text-xs font-bold hover:bg-slate-50 flex items-center">
+                                <i data-lucide="download-cloud" class="w-3 h-3 mr-2"></i> Export Room Schedule
+                            </button>
+                            <button title="Fullscreen" onclick="toggleCalendarFullscreen('rooms')" class="w-8 h-8 flex items-center justify-center rounded border text-slate-600 hover:bg-gray-100">
+                                <i data-lucide="maximize" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="room-schedule-preview" class="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm text-sm text-gray-700"></div>
                 </section>
             </div>
         </main>
@@ -220,6 +268,22 @@
             <div class="mb-6">
                 <label class="text-[10px] font-bold uppercase text-gray-400">Units</label>
                 <input id="res-units" type="number" min="1" value="3" class="w-full p-3 border rounded-xl mt-2 text-sm bg-gray-50 outline-none focus:ring-2 focus:ring-red-800" placeholder="3">
+            </div>
+            <div id="res-subject-extra" style="display:none;" class="mb-6">
+                <label class="text-[10px] font-bold uppercase text-gray-400">Semester</label>
+                <select id="res-semester" class="w-full p-3 border rounded-xl mt-2 text-sm bg-gray-50 outline-none focus:ring-2 focus:ring-red-800">
+                    <option value="First Semester">First Semester</option>
+                    <option value="Second Semester">Second Semester</option>
+                    <option value="Summer Term">Summer Term</option>
+                </select>
+            </div>
+            <div id="res-prof-extra" style="display:none;" class="mb-6">
+                <label class="text-[10px] font-bold uppercase text-gray-400">Faculty Type</label>
+                <select id="res-faculty-type" class="w-full p-3 border rounded-xl mt-2 text-sm bg-gray-50 outline-none focus:ring-2 focus:ring-red-800">
+                    <option value="Designee">Designee Faculty</option>
+                    <option value="Regular">Regular Faculty</option>
+                    <option value="Part-Time">Part-Time Faculty</option>
+                </select>
             </div>
             <div class="flex space-x-3">
                 <button onclick="saveResource()" class="flex-1 py-3 pup-maroon text-white rounded-xl font-bold hover:bg-red-900 shadow-lg">Save</button>
@@ -262,13 +326,22 @@
         
         w-full max-w-xl overflow-hidden shadow-2xl">
             <div class="pup-maroon p-6 text-white font-bold flex justify-between items-center">
-                <div class="flex items-center space-x-2"><i data-lucide="plus-circle" class="w-5 h-5"></i><span>ASSIGN CLASS LOAD</span></div>
+                <div class="flex items-center space-x-2"><i data-lucide="plus-circle" class="w-5 h-5"></i><span id="modal-load-title">ASSIGN CLASS LOAD</span></div>
                 <button onclick="closeModal('modal-load')" class="hover:rotate-90 transition-all"><i data-lucide="x"></i></button>
             </div>
             <div class="p-8 grid grid-cols-2 gap-6">
-                <div class="col-span-2 space-y-4">
+                    <div class="col-span-2 space-y-4">
                     <div><label class="text-[10px] font-bold uppercase text-gray-400">Professor</label><select id="ld-prof" onchange="refreshTimeSlots()" class="w-full p-3 border rounded-xl text-sm bg-gray-50"></select></div>
-                    <div><label class="text-[10px] font-bold uppercase text-gray-400">Subject</label><select id="ld-sub" onchange="refreshTimeSlots()" class="w-full p-3 border rounded-xl text-sm bg-gray-50"></select></div>
+                    <div class="grid grid-cols-3 gap-3 items-end">
+                        <div class="col-span-2">
+                            <label class="text-[10px] font-bold uppercase text-gray-400">Subject</label>
+                            <select id="ld-sub" onchange="onSubjectChange()" class="w-full p-3 border rounded-xl text-sm bg-gray-50"></select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold uppercase text-gray-400">Units</label>
+                            <input id="ld-units" type="number" min="1" max="6" step="1" class="w-full p-3 border rounded-xl text-sm bg-white" />
+                        </div>
+                    </div>
                 </div>
                 <div><label class="text-[10px] font-bold uppercase text-gray-400">Section</label><select id="ld-sec" onchange="refreshTimeSlots()" class="w-full p-3 border rounded-xl text-sm bg-gray-50"></select></div>
                 <div><label class="text-[10px] font-bold uppercase text-gray-400">Room</label><select id="ld-room" onchange="refreshTimeSlots()" class="w-full p-3 border rounded-xl text-sm bg-gray-50"></select></div>
@@ -278,7 +351,7 @@
                     <label class="text-[10px] font-bold uppercase text-gray-400">Time Slot Availability (Strikethrough = Conflict)</label>
                     <select id="ld-time" class="w-full p-3 border-2 border-red-50 rounded-xl font-bold text-sm text-red-900"></select>
                 </div>
-                <button onclick="saveLoad()" class="col-span-2 py-4 pup-maroon text-white rounded-2xl font-bold shadow-xl hover:bg-red-900 transition-all">Apply to Schedule</button>
+                <button id="save-load-button" onclick="saveLoad()" class="col-span-2 py-4 pup-maroon text-white rounded-2xl font-bold shadow-xl hover:bg-red-900 transition-all">Apply to Schedule</button>
             </div>
         </div>
     </div>
@@ -289,34 +362,51 @@
 const State = {
     currentUser: null,
     activeProgram: "Information Technology",
+    subjectSemesterFilter: 'All',
+    facultyTypeFilter: 'All',
     db: {
         schoolYears: ["A.Y. 2024-2025", "A.Y. 2025-2026", "A.Y. 2026-2027"],
         rooms: ["Room 201", "Room 202", "Lab A", "Lab B", "Audio Visual Room"],
         buildings: ["New Building", "Old Building"],
         programs: {
+            "General Academics": {
+                profs: [],
+                sections: [],
+                subjects: []
+            },
             "Information Technology": { 
-                profs: ["Dr. Evelyn Macaraig", "Ms. Nhicole", "Prof. Ricardo Dela Cruz"], 
+                profs: [
+                    { name: "Dr. Evelyn Macaraig", type: "Regular" }, 
+                    { name: "Ms. Nhicole", type: "Designee" }, 
+                    { name: "Prof. Ricardo Dela Cruz", type: "Part-Time" }
+                ], 
                 sections: ["BSIT 3-1", "BSIT 3-2", "BSIT 4-1"], 
                 subjects: [
-                    { name: "Cloud Computing", units: 3 },
-                    { name: "Cybersecurity", units: 3 },
-                    { name: "Database Admin", units: 3 }
+                    { name: "Cloud Computing", units: 3, semester: "First Semester" },
+                    { name: "Cybersecurity", units: 3, semester: "Second Semester" },
+                    { name: "Database Admin", units: 3, semester: "First Semester" }
                 ]
             },
             "Hospitality Management": { 
-                profs: ["Chef Marco Pierre", "Chef Linda Gomez"], 
+                profs: [
+                    { name: "Chef Marco Pierre", type: "Regular" }, 
+                    { name: "Chef Linda Gomez", type: "Part-Time" }
+                ], 
                 sections: ["BSHM 1-1", "BSHM 2-2"], 
                 subjects: [
-                    { name: "Kitchen Operations", units: 3 },
-                    { name: "Front Office Mgmt", units: 3 }
+                    { name: "Kitchen Operations", units: 3, semester: "First Semester" },
+                    { name: "Front Office Mgmt", units: 3, semester: "Second Semester" }
                 ]
             },
             "Computer Engineering": {
-                profs: ["Engr. Antonio Santos", "Engr. Sherwin Z."],
+                profs: [
+                    { name: "Engr. Antonio Santos", type: "Regular" }, 
+                    { name: "Engr. Sherwin Z.", type: "Designee" }
+                ],
                 sections: ["BSCpE 1-1", "BSCpE 3-1"],
                 subjects: [
-                    { name: "Logic Circuits", units: 3 },
-                    { name: "Embedded Systems", units: 3 }
+                    { name: "Logic Circuits", units: 3, semester: "First Semester" },
+                    { name: "Embedded Systems", units: 3, semester: "Second Semester" }
                 ]
             }
         },
@@ -331,10 +421,12 @@ const TimeStarts = [
     "07:00 AM", "07:30 AM", "08:00 AM", "08:30 AM", "09:00 AM", "09:30 AM",
     "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM", "12:00 PM", "12:30 PM",
     "01:00 PM", "01:30 PM", "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM",
-    "04:00 PM", "04:30 PM"
+    "04:00 PM", "04:30 PM", "05:00 PM", "05:30 PM", "06:00 PM", "06:30 PM",
+    "07:00 PM", "07:30 PM", "08:00 PM", "08:30 PM", "09:00 PM"
 ];
 
-const TimeEndLimit = "10:00 PM";
+// Limit used in some calculations; set to 9:00 PM to match calendar
+const TimeEndLimit = "09:00 PM";
 
 function parseTimeStr(timeStr) {
     const [time, period] = timeStr.split(' ');
@@ -370,7 +462,11 @@ function rangesOverlap(a, b) {
 
 const savedData = localStorage.getItem('schedulerData');
 if (savedData) {
-    State.db = JSON.parse(savedData);
+    try {
+        State.db = JSON.parse(savedData);
+    } catch (e) {
+        console.error('Failed to parse schedulerData, using defaults');
+    }
     
     // Preserve default arrays when saved data is incomplete.
     State.db.schoolYears = State.db.schoolYears || ["A.Y. 2024-2025", "A.Y. 2025-2026", "A.Y. 2026-2027"];
@@ -385,8 +481,15 @@ if (savedData) {
         prog.profs = prog.profs || [];
         prog.sections = prog.sections || [];
         prog.subjects = prog.subjects || [];
+        
+        // Migrate old string profs to object format
+        if (prog.profs.length > 0 && typeof prog.profs[0] === 'string') {
+            prog.profs = prog.profs.map(name => ({ name, type: 'Regular' }));
+        }
+        
+        // Migrate old string subjects to object format
         if (prog.subjects.length > 0 && typeof prog.subjects[0] === 'string') {
-            prog.subjects = prog.subjects.map(name => ({ name, units: 3 }));
+            prog.subjects = prog.subjects.map(name => ({ name, units: 3, semester: 'First Semester' }));
         }
     }
 }
@@ -464,12 +567,19 @@ function initUI() {
     document.getElementById('dash-prof-count').innerText = prog.profs.length;
     document.getElementById('dash-prog-count').innerText = Object.keys(State.db.programs).length;
     document.getElementById('dash-load-count').innerText = State.db.loads.filter(l => l.program === State.activeProgram).length;
+    const totalUnits = State.db.loads.filter(l => l.program === State.activeProgram).reduce((sum, l) => sum + (l.units || 3), 0);
+    document.getElementById('dash-total-units').innerText = `${totalUnits}/45`;
     document.getElementById('header-prog-display').innerText = State.activeProgram;
 
     renderSYDropdown(); // Added this call
+    // Initialize semester and faculty type filters
+    setSubjectSemesterFilter(State.subjectSemesterFilter);
+    setFacultyTypeFilter(State.facultyTypeFilter);
     refreshManagementLists();
     renderLoadTable();
     updateSectionDropdowns();
+    updateRoomDropdowns();
+    renderRoomSchedulePreview();
     lucide.createIcons();
 }
 
@@ -515,13 +625,14 @@ function setProgram(p) {
 }
 
 function navTo(id) {
-    ['dashboard', 'management', 'loading', 'sections'].forEach(s => {
+    ['dashboard', 'management', 'loading', 'sections', 'rooms'].forEach(s => {
         document.getElementById(`sec-${s}`).classList.add('hidden');
         document.getElementById(`nav-${s}`).classList.remove('active-nav');
     });
     document.getElementById(`sec-${id}`).classList.remove('hidden');
     document.getElementById(`nav-${id}`).classList.add('active-nav');
-    if(id === 'sections') renderTimetable();
+    if (id === 'sections') renderTimetable();
+    if (id === 'rooms') renderRoomSchedulePreview();
 }
 
 function refreshTimeSlots() {
@@ -530,7 +641,7 @@ function refreshTimeSlots() {
     const sec = document.getElementById('ld-sec').value;
     const room = document.getElementById('ld-room').value;
     const sub = document.getElementById('ld-sub');
-    const units = Number(sub.selectedOptions[0]?.dataset?.units || 3);
+    const units = Number(document.getElementById('ld-units')?.value || sub.selectedOptions[0]?.dataset?.units || 3);
     const select = document.getElementById('ld-time');
 
     select.innerHTML = TimeStarts.map(start => {
@@ -538,6 +649,7 @@ function refreshTimeSlots() {
         const target = parseTimeRange(range);
 
         const conflict = State.db.loads.some(l => {
+            if (currentLoadEditId && l.id === currentLoadEditId) return false;
             if (l.day !== day) return false;
             if (l.room === room) return rangesOverlap(target, parseTimeRange(l.time));
             if (l.prof === prof || l.sec === sec) return rangesOverlap(target, parseTimeRange(l.time));
@@ -550,11 +662,26 @@ function refreshTimeSlots() {
     }).join('');
 }
 
+function onSubjectChange() {
+    const sub = document.getElementById('ld-sub');
+    const unitsInput = document.getElementById('ld-units');
+    const defaultUnits = Number(sub.selectedOptions[0]?.dataset?.units || 3);
+    if (unitsInput) unitsInput.value = defaultUnits;
+    refreshTimeSlots();
+}
+
 // --- RESOURCE MANAGEMENT ---
 let currentResType = "";
+let currentLoadEditId = null;
 function openResourceModal(type) {
     currentResType = type;
     document.getElementById('res-modal-title').innerText = `Add New ${type}`;
+    // Show subject semester selector when adding a Subject
+    const subjExtra = document.getElementById('res-subject-extra');
+    if (subjExtra) subjExtra.style.display = type === 'Subject' ? 'block' : 'none';
+    // Show faculty type selector when adding a Professor
+    const profExtra = document.getElementById('res-prof-extra');
+    if (profExtra) profExtra.style.display = type === 'Professor' ? 'block' : 'none';
     document.getElementById('modal-resource').style.display = 'flex';
 }
 
@@ -569,14 +696,21 @@ function saveResource() {
         State.db.rooms.push(val); // Global Rooms
     } else {
         const prog = State.db.programs[State.activeProgram];
-        if(currentResType === 'Professor') prog.profs.push(val);
-        if(currentResType === 'Subject') prog.subjects.push({ name: val, units: units || 3 });
+        if(currentResType === 'Professor') {
+            const type = document.getElementById('res-faculty-type')?.value || 'Regular';
+            prog.profs.push({ name: val, type: type });
+        }
+        if(currentResType === 'Subject') {
+            const sem = document.getElementById('res-semester')?.value || 'First Semester';
+            prog.subjects.push({ name: val, units: units || 3, semester: sem });
+        }
         if(currentResType === 'Section') prog.sections.push(val);
     }
     
     document.getElementById('res-input').value = "";
     document.getElementById('res-units').value = "3";
     closeModal('modal-resource');
+    localStorage.setItem('schedulerData', JSON.stringify(State.db));
     initUI();
 }
 
@@ -585,6 +719,91 @@ function refreshManagementLists() {
     document.getElementById('current-prog-label').innerText = State.activeProgram;
 
     const getLabel = item => typeof item === 'string' ? item : item.name;
+    const renderItemProf = (item) => {
+        const label = getLabel(item);
+        const safeLabel = label.replace(/'/g, "\\'");
+        const type = typeof item === 'string' ? 'Regular' : item.type || 'Regular';
+        const maxUnits = type === 'Designee' ? 6 : (type === 'Regular' ? 12 : 999);
+        const currentUnits = calculateProfessorUnits(label);
+        const percentage = (currentUnits / maxUnits) * 100;
+        const statusColor = percentage >= 100 ? 'bg-red-500' : (percentage >= 80 ? 'bg-yellow-500' : 'bg-green-500');
+        return `
+            <div class="p-3 bg-gray-50 rounded-xl border border-transparent hover:border-gray-200 hover:bg-white transition-all group">
+                <div class="flex items-start justify-between gap-4">
+                    <div class="flex-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="text-[11px] font-bold text-gray-700">${label}</span>
+                            <span class="text-[8px] px-2 py-1 bg-blue-100 text-blue-700 rounded font-bold">${type}</span>
+                            <span class="text-[8px] px-2 py-1 font-bold text-gray-600">${currentUnits}/${maxUnits}u</span>
+                        </div>
+                        <div class="mt-2">
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="${statusColor} h-2 rounded-full" style="width: ${Math.min(percentage, 100)}%"></div>
+                            </div>
+                        </div>
+                        <div class="mt-3 flex items-center gap-2 text-[10px] text-gray-500">
+                            <span class="font-semibold">${currentUnits}u assigned</span>
+                            <span class="px-2 py-1 rounded-full bg-gray-100 text-gray-600">${Math.round(percentage)}%</span>
+                        </div>
+                        ${renderProfessorWeeklyProfile(label)}
+                    </div>
+                    <div class="flex flex-col items-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                        <select onchange="updateProfessorType('${safeLabel}', this.value)" class="text-[10px] font-bold rounded-lg border border-gray-200 bg-white px-2 py-1">
+                            <option value="Designee" ${type === 'Designee' ? 'selected' : ''}>Designee</option>
+                            <option value="Regular" ${type === 'Regular' ? 'selected' : ''}>Regular</option>
+                            <option value="Part-Time" ${type === 'Part-Time' ? 'selected' : ''}>Part-Time</option>
+                        </select>
+                        <button onclick="deleteResource('${safeLabel}', 'Professor')" class="text-gray-300 hover:text-red-500 transition-all">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    };
+    
+    const renderItemSubj = (item) => {
+        const label = getLabel(item);
+        const sem = typeof item === 'string' ? 'First Semester' : (item.semester || 'First Semester');
+        return `
+            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-xl border border-transparent hover:border-gray-200 hover:bg-white transition-all group">
+                <div class="flex-1">
+                    <span class="text-[11px] font-bold text-gray-700">${label}</span>
+                    <span class="ml-2 text-[8px] px-2 py-1 bg-amber-100 text-amber-700 rounded font-bold">${sem}</span>
+                </div>
+                <button onclick="deleteResource('${label}', 'Subject')" class="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+            </div>
+        `;
+    };
+
+    // Filter faculty by type and search term
+    const facFilter = State.facultyTypeFilter || 'All';
+    const searchTerm = (document.getElementById('fac-search')?.value || '').toLowerCase();
+    const profsToShow = (p.profs || []).filter(pf => {
+        const type = (typeof pf === 'string') ? 'Regular' : (pf.type || 'Regular');
+        const name = (typeof pf === 'string') ? pf : pf.name;
+        const typeMatch = facFilter === 'All' ? true : type === facFilter;
+        const searchMatch = searchTerm === '' || name.toLowerCase().includes(searchTerm);
+        return typeMatch && searchMatch;
+    });
+    const profsHtml = profsToShow.map(x => renderItemProf(x)).join('');
+    const profMessage = facFilter === 'All' ? 'No professors found.' : `No available ${facFilter} professors.`;
+    document.getElementById('list-profs').innerHTML = profsHtml || empty(profMessage);
+    
+    // Filter subjects by semester and search term
+    const subjFilter = State.subjectSemesterFilter || 'All';
+    const searchTermSubj = (document.getElementById('subj-search')?.value || '').toLowerCase();
+    const subjectsToShow = (p.subjects || []).filter(s => {
+        const sem = (typeof s === 'string') ? 'First Semester' : (s.semester || 'First Semester');
+        const name = (typeof s === 'string') ? s : s.name;
+        const semMatch = subjFilter === 'All' ? true : sem === subjFilter;
+        const searchMatch = searchTermSubj === '' || name.toLowerCase().includes(searchTermSubj);
+        return semMatch && searchMatch;
+    });
+    document.getElementById('list-subjects').innerHTML = subjectsToShow.map(x => renderItemSubj(x)).join('') || empty();
+    
     const renderItem = (item, type) => {
         const label = getLabel(item);
         return `
@@ -597,28 +816,148 @@ function refreshManagementLists() {
         `;
     };
 
-    document.getElementById('list-profs').innerHTML = p.profs.map(x => renderItem(x, 'Professor')).join('') || empty();
-    document.getElementById('list-subjects').innerHTML = p.subjects.map(x => renderItem(x, 'Subject')).join('') || empty();
     document.getElementById('list-sections').innerHTML = p.sections.map(x => renderItem(x, 'Section')).join('') || empty();
     lucide.createIcons();
+}
+
+function empty(message = 'No records found.') {
+    return `<div class="p-6 text-center text-gray-400 italic text-sm">${message}</div>`;
 }
 
 function deleteResource(name, type) {
     if(!confirm(`Remove ${name}?`)) return;
     const prog = State.db.programs[State.activeProgram];
-    if(type === 'Professor') prog.profs = prog.profs.filter(x => x !== name);
+    if(type === 'Professor') prog.profs = prog.profs.filter(x => (typeof x === 'string' ? x : x.name) !== name);
     if(type === 'Subject') prog.subjects = prog.subjects.filter(x => (typeof x === 'string' ? x : x.name) !== name);
     if(type === 'Section') prog.sections = prog.sections.filter(x => x !== name);
+    localStorage.setItem('schedulerData', JSON.stringify(State.db));
     initUI();
 }
 
-function empty() { return `<div class="text-center py-8 text-gray-300 text-[10px] font-bold italic">LIST EMPTY</div>`; }
+function updateProfessorType(name, newType) {
+    const prog = State.db.programs[State.activeProgram];
+    const prof = prog.profs.find(p => (typeof p === 'string' ? p : p.name) === name);
+    if (prof) {
+        if (typeof prof === 'string') {
+            const index = prog.profs.indexOf(prof);
+            prog.profs[index] = { name: prof, type: newType };
+        } else {
+            prof.type = newType;
+        }
+        localStorage.setItem('schedulerData', JSON.stringify(State.db));
+        refreshManagementLists();
+        renderLoadTable();
+    }
+}
+
+function getProfessorType(profName) {
+    const prog = State.db.programs[State.activeProgram];
+    const prof = prog.profs.find(p => (typeof p === 'string' ? p : p.name) === profName);
+    return (typeof prof === 'string') ? 'Regular' : (prof?.type || 'Regular');
+}
+
+function getProfessorLoadByDay(profName) {
+    return State.db.loads
+        .filter(l => l.program === State.activeProgram && l.prof === profName)
+        .reduce((map, l) => {
+            map[l.day] = (map[l.day] || 0) + (l.units || 3);
+            return map;
+        }, {});
+}
+
+function renderProfessorWeeklyProfile(profName) {
+    const daily = getProfessorLoadByDay(profName);
+    const cells = Days.map(day => {
+        const units = daily[day] || 0;
+        const classes = units === 0
+            ? 'bg-gray-100 border-gray-200 text-gray-400'
+            : units >= 6
+                ? 'bg-red-100 border-red-200 text-red-700'
+                : 'bg-emerald-100 border-emerald-200 text-emerald-700';
+        return `<div class="w-8 h-8 rounded-xl border ${classes} flex items-center justify-center text-[9px] font-bold">${units ? `${units}u` : '-'}</div>`;
+    }).join('');
+    return `<div class="grid grid-cols-7 gap-1 mt-3">${cells}</div>`;
+}
+
+function setSubjectSemesterFilter(val) {
+    State.subjectSemesterFilter = val;
+    ['All','First Semester','Second Semester','Summer Term'].forEach(v => {
+        const id = v === 'All' ? 'sem-all' : (v === 'First Semester' ? 'sem-first' : (v === 'Second Semester' ? 'sem-second' : 'sem-summer'));
+        const el = document.getElementById(id);
+        if (el) {
+            if (v === val) el.classList.add('bg-red-700','text-white');
+            else el.classList.remove('bg-red-700','text-white');
+        }
+    });
+    refreshManagementLists();
+}
+
+function setFacultyTypeFilter(val) {
+    State.facultyTypeFilter = val;
+    ['All','Designee','Regular','Part-Time'].forEach(v => {
+        const id = v === 'All' ? 'fac-all' : (v === 'Designee' ? 'fac-designee' : (v === 'Regular' ? 'fac-regular' : 'fac-parttime'));
+        const el = document.getElementById(id);
+        if (el) {
+            if (v === val) el.classList.add('bg-blue-700','text-white');
+            else el.classList.remove('bg-blue-700','text-white');
+        }
+    });
+    refreshManagementLists();
+}
+
+function promoteFaculty(name, currentType) {
+    const types = ['Part-Time', 'Regular', 'Designee'];
+    const currentIdx = types.indexOf(currentType);
+    const nextIdx = (currentIdx + 1) % types.length;
+    const newType = types[nextIdx];
+    
+    const prog = State.db.programs[State.activeProgram];
+    const prof = prog.profs.find(p => (typeof p === 'string' ? p : p.name) === name);
+    if (prof && typeof prof === 'object') {
+        prof.type = newType;
+        localStorage.setItem('schedulerData', JSON.stringify(State.db));
+        refreshManagementLists();
+    }
+}
+
+function calculateProfessorUnits(profName) {
+    const prog = State.db.programs[State.activeProgram];
+    return State.db.loads
+        .filter(l => l.program === State.activeProgram && l.prof === profName)
+        .reduce((sum, l) => sum + (l.units || 3), 0);
+}
+
+function getProfessorMaxUnits(profName) {
+    const prog = State.db.programs[State.activeProgram];
+    const prof = prog.profs.find(p => (typeof p === 'string' ? p : p.name) === profName);
+    const type = (typeof prof === 'string') ? 'Regular' : (prof?.type || 'Regular');
+    if (type === 'Designee') return 6;
+    if (type === 'Regular') return 12;
+    return 999; // Part-Time can take remaining up to 45 total
+}
+
+function canAssignLoad(profName, units, ignoreLoadId = null) {
+    const currentUnits = State.db.loads
+        .filter(l => l.program === State.activeProgram && l.prof === profName && l.id !== ignoreLoadId)
+        .reduce((sum, l) => sum + (l.units || 3), 0);
+    const maxUnits = getProfessorMaxUnits(profName);
+    const totalUnits = State.db.loads
+        .filter(l => l.program === State.activeProgram && l.id !== ignoreLoadId)
+        .reduce((sum, l) => sum + (l.units || 3), 0);
+    const wouldExceedProf = (currentUnits + units) > maxUnits;
+    const wouldExceedWeek = (totalUnits + units) > 45;
+    return { canAssign: !wouldExceedProf && !wouldExceedWeek, wouldExceedProf, wouldExceedWeek, currentUnits, maxUnits, totalUnits };
+}
 
 // --- LOADING ---
-function openLoadModal() {
+function openLoadModal(loadId = null) {
     const p = State.db.programs[State.activeProgram];
     if (!p) return alert("No active program selected!");
     
+    const load = loadId ? State.db.loads.find(l => l.id === loadId) : null;
+    const editMode = Boolean(load);
+    currentLoadEditId = load ? load.id : null;
+
     // Ensure arrays exist
     if (!p.profs) p.profs = [];
     if (!p.subjects) p.subjects = [];
@@ -628,14 +967,40 @@ function openLoadModal() {
     
     if(p.profs.length === 0 || p.sections.length === 0) return alert("Add faculty and sections first!");
     
-    document.getElementById('ld-prof').innerHTML = p.profs.map(x => `<option>${x}</option>`).join('');
-    document.getElementById('ld-sub').innerHTML = p.subjects.map(s => `<option value="${s.name}" data-units="${s.units}">${s.name} (${s.units}u)</option>`).join('');
+    document.getElementById('modal-load-title').innerText = editMode ? 'EDIT ASSIGNMENT' : 'ASSIGN CLASS LOAD';
+    document.getElementById('save-load-button').innerText = editMode ? 'Update Assignment' : 'Apply to Schedule';
+    
+    document.getElementById('ld-prof').innerHTML = p.profs.map(x => {
+        const label = typeof x === 'string' ? x : x.name;
+        return `<option>${label}</option>`;
+    }).join('');
+    document.getElementById('ld-sub').innerHTML = p.subjects.map(s => {
+        const name = typeof s === 'string' ? s : s.name;
+        const units = typeof s === 'string' ? 3 : (s.units || 3);
+        return `<option value="${name}" data-units="${units}">${name} (${units}u)</option>`;
+    }).join('');
+    // Initialize units input to subject default for new assignments
+    const initialUnits = Number(document.getElementById('ld-sub').selectedOptions[0]?.dataset?.units || 3);
+    const unitsInput = document.getElementById('ld-units');
+    if (unitsInput && !load) unitsInput.value = initialUnits;
     document.getElementById('ld-sec').innerHTML = p.sections.map(x => `<option>${x}</option>`).join('');
-    setTimeout(refreshTimeSlots, 0);
     document.getElementById('ld-room').innerHTML = State.db.rooms.map(x => `<option>${x}</option>`).join('');
     document.getElementById('ld-building').innerHTML = State.db.buildings.map(x => `<option>${x}</option>`).join('');
     document.getElementById('ld-day').innerHTML = Days.map(x => `<option>${x}</option>`).join('');
+
+    if (load) {
+        document.getElementById('ld-prof').value = load.prof;
+        document.getElementById('ld-sub').value = load.sub;
+        document.getElementById('ld-sec').value = load.sec;
+        document.getElementById('ld-room').value = load.room;
+        document.getElementById('ld-building').value = load.building;
+        document.getElementById('ld-day').value = load.day;
+        document.getElementById('ld-units').value = load.units || 3;
+    }
     refreshTimeSlots();
+    if (load) {
+        document.getElementById('ld-time').value = load.time;
+    }
     document.getElementById('modal-load').style.display = 'flex';
     lucide.createIcons();
 }
@@ -643,8 +1008,9 @@ function openLoadModal() {
 function saveLoad() {
     const time = document.getElementById('ld-time').value;
     const sub = document.getElementById('ld-sub').value;
-    const units = Number(document.getElementById('ld-sub').selectedOptions[0]?.dataset?.units || 3);
+    const units = Math.max(1, Math.floor(Number(document.getElementById('ld-units')?.value || document.getElementById('ld-sub').selectedOptions[0]?.dataset?.units || 3)));
     const day = document.getElementById('ld-day').value;
+    const prof = document.getElementById('ld-prof').value;
     
     // Safety Check: Don't save if subject or time is missing
     if(!time || !sub || !day) {
@@ -652,9 +1018,23 @@ function saveLoad() {
         return;
     }
     
+    // Check unit capacity
+    const capacityCheck = canAssignLoad(prof, units, currentLoadEditId);
+    if (!capacityCheck.canAssign) {
+        let message = "Cannot assign load. ";
+        if (capacityCheck.wouldExceedProf) {
+            message += `${prof} (${capacityCheck.currentUnits}/${capacityCheck.maxUnits}u) would exceed their limit with +${units}u. `;
+        }
+        if (capacityCheck.wouldExceedWeek) {
+            message += `Total weekly units (${capacityCheck.totalUnits}/${45}u) would exceed 45u limit.`;
+        }
+        alert(message);
+        return;
+    }
+    
     const load = {
-        id: Date.now(),
-        prof: document.getElementById('ld-prof').value,
+        id: currentLoadEditId || Date.now(),
+        prof: prof,
         sub: sub,
         units: units,
         sec: document.getElementById('ld-sec').value,
@@ -666,8 +1046,16 @@ function saveLoad() {
         program: State.activeProgram
     };
     
-    // 1. Update the local variable
-    State.db.loads.push(load);
+    if (currentLoadEditId) {
+        const existing = State.db.loads.find(l => l.id === currentLoadEditId);
+        if (existing) {
+            Object.assign(existing, load);
+        }
+    } else {
+        State.db.loads.push(load);
+    }
+
+    currentLoadEditId = null;
 
     // 2. Update the UI
     closeModal('modal-load');
@@ -675,26 +1063,53 @@ function saveLoad() {
 
     // 3. Update the permanent Storage (Last Step)
     localStorage.setItem('schedulerData', JSON.stringify(State.db));
-
+    initUI();
 }
 
+
+function editLoad(id) {
+    openLoadModal(id);
+}
 
 function deleteLoad(id) {
     State.db.loads = State.db.loads.filter(l => l.id !== id);
     renderLoadTable();
+    localStorage.setItem('schedulerData', JSON.stringify(State.db));
+    initUI();
 }
 
 function renderLoadTable() {
     const data = State.db.loads.filter(l => l.program === State.activeProgram);
-    document.getElementById('load-table').innerHTML = data.map(l => `
+    document.getElementById('load-table').innerHTML = data.map(l => {
+        const profType = getProfessorType(l.prof);
+        const profBadge = profType === 'Designee'
+            ? 'bg-red-100 text-red-700'
+            : profType === 'Part-Time'
+                ? 'bg-slate-100 text-slate-700'
+                : 'bg-emerald-100 text-emerald-700';
+        return `
         <tr class="border-b hover:bg-gray-50 transition-colors">
-            <td class="p-4 font-bold text-red-900">${l.prof}</td>
+            <td class="p-4 font-bold text-red-900">
+                ${l.prof}<br>
+                <span class="mt-2 inline-flex px-2 py-1 rounded-full text-[10px] font-bold ${profBadge}">${profType}</span>
+            </td>
             <td class="p-4 text-xs font-semibold">${l.sub} (${l.units || 3}u)</td>
-            <td class="p-4"><span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-md text-[10px] font-bold">${l.sec}</span></td>
-        <td class="p-4 text-[10px] font-medium text-gray-500">${l.day}<br><span class="text-gray-900 font-bold">${l.time}</span><br><span class="text-[10px] font-semibold text-gray-700">${l.building}</span></td>
-            <td class="p-4 text-right"><button onclick="deleteLoad(${l.id})" class="text-red-500 hover:underline text-[10px] font-bold">CANCEL</button></td>
+            <td class="p-4">
+                <div><span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-md text-[10px] font-bold">${l.sec}</span></div>
+                <div class="mt-2 text-[10px] text-slate-600">Room ${l.room}</div>
+            </td>
+            <td class="p-4 text-[10px] font-medium text-gray-500">
+                ${l.day}<br>
+                <span class="text-gray-900 font-bold">${l.time}</span><br>
+                <span class="text-[10px] font-semibold text-gray-700">${l.building}</span>
+            </td>
+            <td class="p-4 text-right space-x-2">
+                <button onclick="editLoad(${l.id})" class="text-blue-500 hover:underline text-[10px] font-bold">EDIT</button>
+                <button onclick="deleteLoad(${l.id})" class="text-red-500 hover:underline text-[10px] font-bold">CANCEL</button>
+            </td>
         </tr>
-    `).join('') || `<tr><td colspan="5" class="p-10 text-center text-gray-300 italic">No assignments found for this program.</td></tr>`;
+        `;
+    }).join('') || `<tr><td colspan="5" class="p-10 text-center text-gray-300 italic">No assignments found for this program.</td></tr>`;
 }
 
 // --- TIMETABLES ---
@@ -702,6 +1117,102 @@ function updateSectionDropdowns() {
     const sel = document.getElementById('view-section-select');
     const p = State.db.programs[State.activeProgram];
     sel.innerHTML = p.sections.map(s => `<option>${s}</option>`).join('') || '<option disabled>No Sections</option>';
+}
+
+function updateRoomDropdowns() {
+    const sel = document.getElementById('view-room-select');
+    sel.innerHTML = State.db.rooms.map(r => `<option>${r}</option>`).join('') || '<option disabled>No Rooms</option>';
+    renderRoomSchedulePreview();
+}
+
+function renderRoomSchedulePreview() {
+    const preview = document.getElementById('room-schedule-preview');
+    if (!preview) return;
+
+    const room = document.getElementById('view-room-select')?.value;
+    const sy = document.getElementById('sy-selector')?.value;
+    if (!room) {
+        preview.innerHTML = '<div class="text-gray-500 italic">Select a room to preview its weekly schedule here.</div>';
+        return;
+    }
+
+    const loads = State.db.loads
+        .filter(l => l.room === room && l.sy === sy)
+        .sort((a, b) => {
+            if (a.day !== b.day) return Days.indexOf(a.day) - Days.indexOf(b.day);
+            return parseTimeRange(a.time).start - parseTimeRange(b.time).start;
+        });
+
+    if (loads.length === 0) {
+        preview.innerHTML = `<div class="text-gray-500 italic">No scheduled classes found for <strong>${room}</strong> in <strong>${sy}</strong>.</div>`;
+        return;
+    }
+
+    const scheduleMap = {};
+    const skipCell = {};
+    Days.forEach(day => {
+        scheduleMap[day] = {};
+        skipCell[day] = {};
+    });
+
+    loads.forEach(load => {
+        const start = load.time.split(' - ')[0];
+        const startIndex = TimeStarts.indexOf(start);
+        if (startIndex === -1) return;
+        const span = (load.units || 3) * 2;
+        scheduleMap[load.day][start] = { load, span };
+        for (let offset = 1; offset < span; offset++) {
+            const slot = TimeStarts[startIndex + offset];
+            if (slot) skipCell[load.day][slot] = true;
+        }
+    });
+
+    let html = `<div class="mb-4 flex flex-col sm:flex-row sm:justify-between gap-3">
+        <div>
+            <div class="text-xs uppercase tracking-widest text-gray-400">Room Calendar</div>
+            <div class="text-lg font-bold text-gray-900">${room}</div>
+            <div class="text-[10px] text-gray-500">Academic Year: ${sy}</div>
+        </div>
+        <div class="text-right text-[10px] text-gray-500">
+            <div>Program: ${State.activeProgram}</div>
+            <div>${loads.length} scheduled class${loads.length === 1 ? '' : 'es'}</div>
+        </div>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full border-collapse text-[11px]">
+            <thead>
+                <tr>
+                    <th class="border border-slate-300 bg-slate-100 px-3 py-2 text-left text-[10px] uppercase text-slate-500">Time</th>
+                    ${Days.map(day => `<th class="border border-slate-300 bg-slate-100 px-3 py-2 text-left text-[10px] uppercase text-slate-500">${day}</th>`).join('')}
+                </tr>
+            </thead>
+            <tbody>`;
+
+    TimeStarts.forEach(start => {
+        html += `<tr class="odd:bg-white even:bg-slate-50"><td class="border border-slate-300 px-3 py-2 text-[10px] font-semibold text-slate-600">${start}</td>`;
+        Days.forEach(day => {
+            if (skipCell[day][start]) {
+                return;
+            }
+            const entry = scheduleMap[day][start];
+            if (entry) {
+                const { load, span } = entry;
+                html += `<td rowspan="${span}" class="border border-slate-300 p-2 align-top bg-amber-100 text-slate-900">
+                    <div class="font-bold text-[11px]">${load.sub}</div>
+                    <div class="text-[10px] text-slate-700">${load.prof}</div>
+                    <div class="text-[9px] text-slate-500">${load.sec} · ${load.building}</div>
+                    <div class="text-[9px] text-slate-500">${load.units || 3}u</div>
+                    <div class="text-[9px] text-slate-500 mt-1">${load.time}</div>
+                </td>`;
+            } else {
+                html += `<td class="border border-slate-300 p-2 bg-white"></td>`;
+            }
+        });
+        html += `</tr>`;
+    });
+
+    html += `</tbody></table></div>`;
+    preview.innerHTML = html;
 }
 
 function toggleNoClass(day) {
@@ -717,50 +1228,105 @@ function renderTimetable() {
     const sec = document.getElementById('view-section-select').value;
     const container = document.getElementById('timetable-container');
     if(!sec) return container.innerHTML = "";
+    const sy = document.getElementById('sy-selector')?.value || '';
 
-    container.innerHTML = Days.map(day => {
-        const dayLoads = State.db.loads
-            .filter(l => l.sec === sec && l.day === day)
-            .sort((a, b) => parseTimeRange(a.time).start - parseTimeRange(b.time).start);
-        
-        const isNoClass = State.db.noClassDays[sec]?.includes(day);
+    const loads = State.db.loads
+        .filter(l => l.sec === sec)
+        .sort((a, b) => {
+            if (a.day !== b.day) return Days.indexOf(a.day) - Days.indexOf(b.day);
+            return parseTimeRange(a.time).start - parseTimeRange(b.time).start;
+        });
 
-        let dayHtml = `
-            <div class="space-y-3">
-                <div class="pup-maroon text-white p-2 rounded-xl text-[10px] font-bold text-center uppercase tracking-tighter">${day}</div>
-                <button onclick="toggleNoClass('${day}')" class="w-full p-2 border border-dashed rounded-lg text-[8px] text-gray-400 hover:bg-white transition uppercase font-bold">${isNoClass ? 'Restore Day' : 'Mark Vacant'}</button>
-        `;
+    const noClassDays = new Set(State.db.noClassDays[sec] || []);
+    const scheduleMap = {};
+    const skipCell = {};
 
-        if(isNoClass) {
-            dayHtml += `<div class="h-64 flex items-center justify-center text-red-200 font-bold text-[10px] bg-red-50 rounded-2xl border border-red-100 uppercase tracking-widest" style="writing-mode: vertical-rl">No Classes Scheduled</div>`;
-        } else if(dayLoads.length === 0) {
-            dayHtml += `<div class="h-32 flex items-center justify-center text-gray-300 text-[9px] font-bold italic bg-white rounded-2xl border border-dashed border-gray-200">VACANT</div>`;
-        } else {
-            dayLoads.forEach((load, idx) => {
-                dayHtml += `
-                    <div class="bg-white p-3 rounded-xl shadow-sm border-l-4 border-yellow-500 animate-in zoom-in-95 duration-300">
-                        <p class="text-[8px] font-bold text-red-800 leading-tight mb-1">${load.time}</p>
-                        <p class="text-[10px] font-bold text-gray-900 leading-tight mb-1">${load.sub} (${load.units || 3}u)</p>
-                        <p class="text-[9px] text-gray-400 italic">${load.prof} (${load.room} - ${load.building})</p>
-                    </div>`;
+    Days.forEach(day => {
+        scheduleMap[day] = {};
+        skipCell[day] = {};
+    });
 
-                const nextLoad = dayLoads[idx + 1];
-                if (nextLoad) {
-                    const currentEnd = parseTimeRange(load.time).end;
-                    const nextStart = parseTimeRange(nextLoad.time).start;
-                    if (nextStart > currentEnd) {
-                        dayHtml += `<div class="p-2 rounded-xl text-center text-[8px] font-bold text-gray-400 border border-gray-100 uppercase bg-gray-50/50">${formatTime(currentEnd)} - ${formatTime(nextStart)}<br>Gap</div>`;
-                    }
-                }
-            });
+    loads.forEach(load => {
+        const start = load.time.split(' - ')[0];
+        const startIndex = TimeStarts.indexOf(start);
+        if (startIndex === -1) return;
+        const span = (load.units || 3) * 2;
+        scheduleMap[load.day][start] = { load, span };
+        for (let offset = 1; offset < span; offset++) {
+            const slot = TimeStarts[startIndex + offset];
+            if (slot) skipCell[load.day][slot] = true;
         }
-        dayHtml += `</div>`;
-        return dayHtml;
-    }).join('');
+    });
+
+    let html = `<div class="mb-4 flex flex-col sm:flex-row sm:justify-between gap-3">
+        <div>
+            <div class="text-xs uppercase tracking-widest text-gray-400">Section Calendar</div>
+            <div class="text-lg font-bold text-gray-900">${sec}</div>
+            <div class="text-[10px] text-gray-500">Academic Year: ${sy}</div>
+        </div>
+        <div class="text-right text-[10px] text-gray-500">
+            <div class="text-[10px] text-gray-500">Program: ${State.activeProgram}</div>
+            <div>${loads.length} assigned class${loads.length === 1 ? '' : 'es'}</div>
+        </div>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full border-collapse text-[11px]">
+            <thead>
+                <tr>
+                    <th class="border border-slate-300 bg-slate-100 px-3 py-2 text-left text-[10px] uppercase text-slate-500">Time</th>
+                    ${Days.map(day => `<th class="border border-slate-300 bg-slate-100 px-3 py-2 text-left text-[10px] uppercase text-slate-500">${day}</th>`).join('')}
+                </tr>
+            </thead>
+            <tbody>`;
+
+    TimeStarts.forEach(start => {
+        html += `<tr class="odd:bg-white even:bg-slate-50"><td class="border border-slate-300 px-3 py-2 text-[10px] font-semibold text-slate-600">${start}</td>`;
+        Days.forEach(day => {
+            if (skipCell[day][start]) {
+                return;
+            }
+            if (noClassDays.has(day)) {
+                html += `<td class="border border-slate-300 p-2 bg-red-50 text-[10px] text-red-600">No Class</td>`;
+                return;
+            }
+            const entry = scheduleMap[day][start];
+            if (entry) {
+                const { load, span } = entry;
+                html += `<td rowspan="${span}" class="border border-slate-300 p-2 align-top bg-blue-100 text-slate-900">
+                    <div class="font-bold text-[11px]">${load.sub}</div>
+                    <div class="text-[10px] text-slate-700">${load.prof}</div>
+                    <div class="text-[9px] text-slate-500">${load.room} · ${load.building}</div>
+                    <div class="text-[9px] text-slate-500">${load.units || 3}u</div>
+                    <div class="text-[9px] text-slate-500 mt-1">${load.time}</div>
+                </td>`;
+            } else {
+                html += `<td class="border border-slate-300 p-2 bg-white"></td>`;
+            }
+        });
+        html += `</tr>`;
+    });
+
+    html += `</tbody></table></div>`;
+    container.innerHTML = html;
     lucide.createIcons();
 }
 
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+function toggleCalendarFullscreen(target = null) {
+    document.body.classList.toggle('calendar-fullscreen');
+    // Re-render the requested view or the currently visible view to ensure layout updates
+    if (target === 'sections') {
+        renderTimetable();
+    } else if (target === 'rooms') {
+        renderRoomSchedulePreview();
+    } else {
+        const activeSection = document.querySelector('section:not(.hidden)')?.id;
+        if (activeSection === 'sec-sections') renderTimetable();
+        if (activeSection === 'sec-rooms') renderRoomSchedulePreview();
+    }
+    lucide.createIcons();
+}
 
 function downloadWorkload() {
     const data = State.db.loads.filter(l => l.program === State.activeProgram);
@@ -826,6 +1392,47 @@ function exportSectionTimetable() {
     const a = document.createElement('a');
     a.href = url;
     a.download = `Timetable_${sec}_${new Date().getTime()}.html`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+function exportRoomSchedule() {
+    const room = document.getElementById('view-room-select').value;
+    const sy = document.getElementById('sy-selector').value;
+    if (!room) return alert('Please select a room to export.');
+
+    const data = State.db.loads
+        .filter(l => l.room === room && l.sy === sy)
+        .sort((a, b) => {
+            if (a.day !== b.day) return Days.indexOf(a.day) - Days.indexOf(b.day);
+            return parseTimeRange(a.time).start - parseTimeRange(b.time).start;
+        });
+
+    if (data.length === 0) return alert(`No schedule found for ${room} in ${sy}.`);
+
+    let html = `<html><head><meta charset="UTF-8"><title>Room Schedule - ${room}</title><style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 10px; text-align: left; }
+        th { background-color: #8dbf8d; color: #111; font-weight: bold; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        h2, p { margin: 0 0 12px; }
+    </style></head><body>
+    <h2>Room Schedule: ${room}</h2>
+    <p><strong>Academic Year:</strong> ${sy}</p>
+    <p><strong>Program:</strong> ${State.activeProgram}</p>
+    <table><tr><th>Day</th><th>Time</th><th>Course</th><th>Professor</th><th>Section</th><th>Program</th><th>Year</th><th>Building</th></tr>`;
+
+    data.forEach(load => {
+        html += `<tr><td>${load.day}</td><td>${load.time}</td><td>${load.sub} (${load.units || 3}u)</td><td>${load.prof}</td><td>${load.sec}</td><td>${load.program}</td><td>${load.sy}</td><td>${load.building}</td></tr>`;
+    });
+
+    html += `</table></body></html>`;
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `RoomSchedule_${room.replace(/\s+/g, '_')}_${new Date().getTime()}.html`;
     a.click();
     window.URL.revokeObjectURL(url);
 }
