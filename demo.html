@@ -540,18 +540,63 @@ function attemptLogin() {
     const p = document.getElementById('login-pass').value;
     const err = document.getElementById('login-error');
 
-    if (Users[u] && Users[u] === p) {
-        State.currentUser = u === 'head_pq' ? 'Academic Head' : 'Academic Aide';
-        document.getElementById('login-overlay').style.display = 'none';
-        document.getElementById('app').classList.remove('hidden');
-        document.getElementById('display-role').innerText = State.currentUser;
-        initUI();
-    } else {
+    fetch('api.php?action=login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: u, password: p })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            State.currentUser = data.role;
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('app').classList.remove('hidden');
+            document.getElementById('display-role').innerText = State.currentUser;
+            loadDataFromDatabase();
+        } else {
+            err.classList.remove('hidden');
+        }
+    })
+    .catch(() => {
         err.classList.remove('hidden');
-    }
+    });
 }
 
 function handleLogout() { location.reload(); }
+
+// Load all data from database
+function loadDataFromDatabase() {
+    fetch('api.php?action=getPrograms')
+    .then(res => res.json())
+    .then(programs => {
+        State.db.programs = programs;
+        return fetch('api.php?action=getLoads');
+    })
+    .then(res => res.json())
+    .then(loads => {
+        State.db.loads = loads.map(l => ({
+            id: l.id,
+            prof: l.professor_name,
+            sub: l.subject_name,
+            units: l.units,
+            sec: l.section,
+            room: l.room,
+            day: new Date(l.schedule).toLocaleString('en-US', { weekday: 'long' }),
+            time: l.schedule,
+            program: Object.keys(State.db.programs).find(p => State.db.programs[p].id === l.program_id)
+        }));
+        return fetch('api.php?action=getRooms');
+    })
+    .then(res => res.json())
+    .then(rooms => {
+        State.db.rooms = rooms.map(r => r.name);
+        initUI();
+    })
+    .catch(err => {
+        console.error('Error loading data:', err);
+        initUI();
+    });
+}
 
 // --- CORE UI ---
 function initUI() {
@@ -706,28 +751,35 @@ function saveResource() {
     if(!val) return;
     const units = Number(document.getElementById('res-units')?.value || 3);
     
-    if(currentResType === 'Program') {
-        State.db.programs[val] = { profs:[], sections:[], subjects:[] };
-    } else if(currentResType === 'Room') {
-        State.db.rooms.push(val); // Global Rooms
-    } else {
-        const prog = State.db.programs[State.activeProgram];
-        if(currentResType === 'Professor') {
-            const type = document.getElementById('res-faculty-type')?.value || 'Regular';
-            prog.profs.push({ name: val, type: type });
+    const payload = {
+        type: currentResType,
+        name: val,
+        units: units,
+        program_id: Object.values(State.db.programs).find(p => p.name === State.activeProgram)?.id,
+        semester: document.getElementById('res-semester')?.value,
+        faculty_type: document.getElementById('res-faculty-type')?.value
+    };
+
+    fetch('api.php?action=addResource', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('res-input').value = "";
+            document.getElementById('res-units').value = "3";
+            closeModal('modal-resource');
+            loadDataFromDatabase();
+        } else {
+            alert('Error saving resource: ' + (data.error || 'Unknown error'));
         }
-        if(currentResType === 'Subject') {
-            const sem = document.getElementById('res-semester')?.value || 'First Semester';
-            prog.subjects.push({ name: val, units: units || 3, semester: sem });
-        }
-        if(currentResType === 'Section') prog.sections.push(val);
-    }
-    
-    document.getElementById('res-input').value = "";
-    document.getElementById('res-units').value = "3";
-    closeModal('modal-resource');
-    localStorage.setItem('schedulerData', JSON.stringify(State.db));
-    initUI();
+    })
+    .catch(err => {
+        console.error('Error:', err);
+        alert('Error saving resource');
+    });
 }
 
 function refreshManagementLists() {
@@ -842,6 +894,9 @@ function empty(message = 'No records found.') {
 
 function deleteResource(name, type) {
     if(!confirm(`Remove ${name}?`)) return;
+    
+    // For now, keep local deletion since we're still using local storage
+    // TODO: Update API to support resource deletion
     const prog = State.db.programs[State.activeProgram];
     if(type === 'Professor') prog.profs = prog.profs.filter(x => (typeof x === 'string' ? x : x.name) !== name);
     if(type === 'Subject') prog.subjects = prog.subjects.filter(x => (typeof x === 'string' ? x : x.name) !== name);
@@ -1048,38 +1103,35 @@ function saveLoad() {
         return;
     }
     
-    const load = {
-        id: currentLoadEditId || Date.now(),
-        prof: prof,
-        sub: sub,
+    const payload = {
+        professor_id: Object.values(State.db.programs).find(p => p.profs?.some(pr => pr.name === prof))?.profs.find(pr => pr.name === prof)?.id || 1,
+        subject_id: Object.values(State.db.programs).find(p => p.subjects?.some(s => s.name === sub))?.subjects.find(s => s.name === sub)?.id || 1,
+        program_id: Object.values(State.db.programs).find(p => p.name === State.activeProgram)?.id || 1,
+        section: document.getElementById('ld-sec').value,
+        schedule: time,
         units: units,
-        sec: document.getElementById('ld-sec').value,
-        room: document.getElementById('ld-room').value,
-        building: document.getElementById('ld-building')?.value || "Main Building",
-        day: day,
-        time: time,
-        sy: document.getElementById('sy-selector').value,
-        program: State.activeProgram
+        room: document.getElementById('ld-room').value
     };
-    
-    if (currentLoadEditId) {
-        const existing = State.db.loads.find(l => l.id === currentLoadEditId);
-        if (existing) {
-            Object.assign(existing, load);
+
+    fetch('api.php?action=saveLoad', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            currentLoadEditId = null;
+            closeModal('modal-load');
+            loadDataFromDatabase();
+        } else {
+            alert('Error saving load: ' + (data.error || 'Unknown error'));
         }
-    } else {
-        State.db.loads.push(load);
-    }
-
-    currentLoadEditId = null;
-
-    // 2. Update the UI
-    closeModal('modal-load');
-    renderLoadTable();
-
-    // 3. Update the permanent Storage (Last Step)
-    localStorage.setItem('schedulerData', JSON.stringify(State.db));
-    initUI();
+    })
+    .catch(err => {
+        console.error('Error:', err);
+        alert('Error saving load');
+    });
 }
 
 
@@ -1088,10 +1140,21 @@ function editLoad(id) {
 }
 
 function deleteLoad(id) {
-    State.db.loads = State.db.loads.filter(l => l.id !== id);
-    renderLoadTable();
-    localStorage.setItem('schedulerData', JSON.stringify(State.db));
-    initUI();
+    fetch(`api.php?action=deleteLoad&id=${id}`, {
+        method: 'DELETE'
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            loadDataFromDatabase();
+        } else {
+            alert('Error deleting load: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(err => {
+        console.error('Error:', err);
+        alert('Error deleting load');
+    });
 }
 
 function renderLoadTable() {
