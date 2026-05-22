@@ -2,6 +2,16 @@ USE pupwms2_db;
 
 -- Create pupwms2_db database tables
 
+-- Users table (Static administrative accounts)
+CREATE TABLE IF NOT EXISTS users (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL, -- Intended for hashed passwords (e.g., bcrypt/password_hash)
+    name VARCHAR(100) NOT NULL,
+    role ENUM('Admin', 'Staff') DEFAULT 'Staff',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Programs table
 CREATE TABLE IF NOT EXISTS programs (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -78,6 +88,18 @@ CREATE TABLE IF NOT EXISTS no_class_days (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (school_year_id) REFERENCES school_years(id) ON DELETE CASCADE
 );
+
+
+-- ========================================================
+-- INSERT SAMPLE DATA
+-- ========================================================
+
+-- Insert static users
+-- Note: The passwords below are plain text for the example. 
+-- In your PHP backend, use password_hash() and save the resulting string.
+INSERT INTO users (username, password, name, role) VALUES 
+('admin', 'admin123', 'System Administrator', 'Admin'),
+('pup_staff', 'staff2026', 'Campus Academic Staff', 'Staff');
 
 -- Insert sample data for programs
 INSERT INTO programs (name) VALUES 
