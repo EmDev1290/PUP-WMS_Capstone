@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PUP-PQ Academic Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div id="login-overlay" class="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900 bg-cover bg-center login-background">
+        <div class="absolute inset-0 bg-black opacity-70"></div>
+        <div class="absolute inset-0 opacity-20 bg-center bg-cover" id="login-bg-pattern"></div>
+        <div class="relative bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md">
+            <div class="w-20 h-20 rounded-full mx-auto mb-4 overflow-hidden border-4 border-maroon">
+                <img src="PUP LOGO.png" onerror="this.src='https://placehold.co/150x150?text=PUP'" alt="PUP logo" class="w-full h-full object-cover">
+            </div>
+            <h1 class="text-2xl font-bold text-center text-gray-900 mb-2">PUP Parañaque</h1>
+            <p class="text-gray-500 text-xs text-center mb-8 uppercase tracking-widest">Workload Management System</p>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase">Username</label>
+                    <input type="text" id="login-user" class="w-full p-3 border rounded-lg text-sm bg-gray-50 outline-none focus:ring-2 focus:ring-red-800" placeholder="aide_pq or head_pq">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase">Password</label>
+                    <input type="password" id="login-pass" class="w-full p-3 border rounded-lg text-sm bg-gray-50 outline-none focus:ring-2 focus:ring-red-800" placeholder="••••••••">
+                </div>
+                <p id="login-error" class="text-red-500 text-[10px] hidden text-center font-bold">Invalid credentials. Default password: password123</p>
+                <button onclick="attemptLogin()" class="w-full pup-maroon text-white py-3 rounded-lg font-bold hover:bg-red-900 transition-all">Enter System</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="module">
+        import { runApplicationBootstrapPipeline } from '../backend/app.py';
+        // Your inline UI paint functions go here
+    </script>
+</body>
+</html>

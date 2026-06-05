@@ -1,0 +1,1925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PUP-PQ Academic Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .pup-maroon { background-color: #800000; }
+        .border-maroon { border-color: #800000; }
+        .sidebar-item:hover { background-color: rgba(255, 199, 44, 0.1); border-left: 4px solid #FFC72C; }
+        .active-nav { background-color: rgba(255, 199, 44, 0.2); border-left: 4px solid #FFC72C; font-weight: 600; }
+        .strikethrough-slot { text-decoration: line-through; color: #d1d5db; pointer-events: none; opacity: 0.6; }
+        .vacant-slot { background: repeating-linear-gradient(45deg, #f9fafb, #f9fafb 10px, #f3f4f6 10px, #f3f4f6 20px); }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #ddd; border-radius: 10px; }
+        /* Fullscreen calendar mode: hide sidebar and expand main area */
+        .calendar-fullscreen aside { display: none !important; }
+        .calendar-fullscreen main { margin-left: 0 !important; width: 100% !important; }
+        .calendar-fullscreen #app { height: 100vh; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- LOGIN OVERLAY -->
+    <div id="login-overlay" class="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900 bg-cover bg-center" style="background-image: linear-gradient(rgba(15,23,42,0.75), rgba(15,23,42,0.85)), url('image1.jpg'); background-position: center; background-size: cover;">
+        <div class="absolute inset-0 bg-black opacity-70"></div>
+        <div class="absolute inset-0 opacity-20 bg-center bg-cover" id="login-bg-pattern"></div>
+        <div class="relative bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md">
+            <div class="w-20 h-20 rounded-full mx-auto mb-4 overflow-hidden border-4 border-maroon">
+                <img src="PUP LOGO.png" alt="PUP logo" class="w-full h-full object-cover">
+            </div>
+            <h1 class="text-2xl font-bold text-center text-gray-900 mb-2">PUP Parañaque</h1>
+            <p class="text-gray-500 text-xs text-center mb-8 uppercase tracking-widest">Workload Management System</p>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase">Username</label>
+                    <input type="text" id="login-user" class="w-full p-3 border rounded-lg text-sm bg-gray-50 outline-none focus:ring-2 focus:ring-red-800" placeholder="aide_pq or head_pq">
+                </div>
+                <div>
+
+====<label class="text-[10px] font-bold text-gray-400 uppercase">Password</label>
+                    <input type="password" id="login-pass" class="w-full p-3 border rounded-lg text-sm bg-gray-50 outline-none focus:ring-2 focus:ring-red-800" placeholder="••••••••">
+                </div>
+                <p id="login-error" class="text-red-500 text-[10px] hidden text-center font-bold">Invalid credentials. Please try again.</p>
+                <button onclick="attemptLogin()" class="w-full pup-maroon text-white py-3 rounded-lg font-bold hover:bg-red-900 transition-all">Enter System</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="app" class="hidden flex h-screen overflow-hidden">
+        <aside class="w-72 pup-maroon text-white flex flex-col shadow-2xl">
+            <div class="p-6 border-b border-red-900/50 flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-white p-1 rounded-full text-red-900 font-bold px-2 py-1 text-[10px]">PUP</div>
+                    <span class="font-bold text-xs tracking-tighter uppercase">PQ-Scheduler</span>
+                </div>
+                <button onclick="handleLogout()" class="text-[9px] bg-red-700 px-2 py-1 rounded font-bold hover:bg-red-600">LOGOUT</button>
+            </div>
+            
+            <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto custom-scrollbar">
+                <button onclick="navTo('dashboard')" id="nav-dashboard" class="sidebar-item active-nav w-full flex items-center space-x-3 p-3 rounded-lg text-sm transition-all"><i data-lucide="layout-dashboard" class="w-4 h-4"></i><span>Dashboard</span></button>
+                <button onclick="navTo('management')" id="nav-management" class="sidebar-item w-full flex items-center space-x-3 p-3 rounded-lg text-sm transition-all"><i data-lucide="database" class="w-4 h-4"></i><span>Program Resources</span></button>
+                <button onclick="navTo('loading')" id="nav-loading" class="sidebar-item w-full flex items-center space-x-3 p-3 rounded-lg text-sm transition-all"><i data-lucide="users" class="w-4 h-4"></i><span>Faculty Loading</span></button>
+                <button onclick="navTo('workloads')" id="nav-workloads" class="sidebar-item w-full flex items-center space-x-3 p-3 rounded-lg text-sm transition-all"><i data-lucide="layout-list" class="w-4 h-4"></i><span>Faculty Workloads</span></button>
+                <button onclick="navTo('sections')" id="nav-sections" class="sidebar-item w-full flex items-center space-x-3 p-3 rounded-lg text-sm transition-all"><i data-lucide="calendar" class="w-4 h-4"></i><span>Section Timetables</span></button>
+                <button onclick="navTo('rooms')" id="nav-rooms" class="sidebar-item w-full flex items-center space-x-3 p-3 rounded-lg text-sm transition-all"><i data-lucide="map-pin" class="w-4 h-4"></i><span>Room Schedules</span></button>
+                
+                <div class="text-[10px] uppercase text-red-300 font-bold mt-8 mb-2 px-2 tracking-widest flex items-center justify-between">
+                    <span>Active Programs</span>
+                    <button onclick="openResourceModal('Program')" class="hover:text-white"><i data-lucide="plus-square" class="w-3 h-3"></i></button>
+                </div>
+                <div id="sidebar-programs" class="space-y-1"></div>
+            </nav>
+
+            <div class="p-4 bg-red-950/40 text-[10px] text-red-200">
+                User: <span id="display-role" class="text-yellow-400 font-bold"></span>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <header class="h-16 bg-white border-b px-8 flex items-center justify-center md:justify-between">
+    <div class="flex items-center space-x-6">
+        <select id="term-selector" class="text-xs font-bold text-red-800 border-none bg-transparent focus:ring-0 uppercase">
+            <option>First Semester</option>
+            <option>Second Semester</option>
+            <option>Summer Term</option>
+        </select>
+        <div class="h-6 w-px bg-gray-200"></div>
+        <div class="flex items-center space-x-2">
+            <select id="sy-selector" onchange="renderRoomSchedulePreview()" class="text-xs font-bold text-gray-500 border-none bg-transparent focus:ring-0">
+                <!-- Dynamically filled -->
+            </select>
+            <button onclick="openSYModal()" class="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-red-800 transition">
+                <i data-lucide="settings-2" class="w-3 h-3"></i>
+            </button>
+        </div>
+    </div>
+    <div class="hidden md:flex flex-col items-end text-right text-sm font-bold text-gray-400 italic space-y-1">
+        <div id="header-time" class="text-xs text-slate-500">00:00:00</div>
+        <div id="header-prog-display"></div>
+    </div>
+</header>
+
+            <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                
+                <!-- DASHBOARD SECTION -->
+                <section id="sec-dashboard" class="space-y-8 animate-in fade-in duration-500">
+                    <div class="flex justify-between items-end">
+                        <h2 class="text-2xl font-bold">Welcome Back, <span class="text-red-800">Academic Team</span></h2>
+                        <span class="text-xs text-gray-400 font-medium" id="current-date"></span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 border-b-4 border-b-red-800">
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Active Faculty</p>
+                            <p id="dash-prof-count" class="text-3xl font-bold">0</p>
+                        </div>
+                        <!-- Total Units Assigned tile removed per request (units shown in Faculty Workloads) -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 border-b-4 border-b-yellow-500">
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Active Programs</p>
+                            <p id="dash-prog-count" class="text-3xl font-bold">0</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 border-b-4 border-b-blue-500">
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Assigned Loads</p>
+                            <p id="dash-load-count" class="text-3xl font-bold">0</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 border-b-4 border-b-green-500">
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Conflicts Detected</p>
+                            <p class="text-3xl font-bold text-green-600">0</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- MODERN RESOURCE MANAGEMENT SECTION -->
+                <section id="sec-management" class="hidden space-y-8">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800">Resource Registry</h2>
+                            <p class="text-sm text-gray-500">Manage infrastructure for <span class="text-red-800 font-bold" id="current-prog-label"></span></p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div class="bg-white p-1 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+                            <div class="p-6">
+                                <div class="flex justify-between items-start mb-6">
+                                    <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center"><i data-lucide="users"></i></div>
+                                    <button onclick="openResourceModal('Professor')" class="text-xs font-bold text-blue-600 hover:underline">Add Faculty</button>
+                                </div>
+                                <h3 class="font-bold text-lg mb-1">Faculty Members</h3>
+                                <p class="text-xs text-gray-400 mb-2 italic">Teaching staff list.</p>
+                                <input id="fac-search" type="text" placeholder="Search faculty..." onkeyup="refreshManagementLists()" class="w-full p-2 border rounded-lg text-xs mb-3 bg-gray-50 outline-none focus:ring-2 focus:ring-blue-700">
+                                <div class="flex gap-2 mb-4 flex-wrap" id="faculty-type-filter">
+                                    <button id="fac-all" onclick="setFacultyTypeFilter('All')" class="px-3 py-1 text-[9px] font-bold rounded-lg border border-gray-300 hover:border-blue-700 transition">All</button>
+                                    <button id="fac-parttime" onclick="setFacultyTypeFilter('Part-Time')" class="px-3 py-1 text-[9px] font-bold rounded-lg border border-gray-300 hover:border-blue-700 transition">Part-Time</button>
+                                    <button id="fac-regular" onclick="setFacultyTypeFilter('Regular')" class="px-3 py-1 text-[9px] font-bold rounded-lg border border-gray-300 hover:border-blue-700 transition">Regular</button>
+                                    <button id="fac-designee" onclick="setFacultyTypeFilter('Designee')" class="px-3 py-1 text-[9px] font-bold rounded-lg border border-gray-300 hover:border-blue-700 transition">Designee</button>
+                                </div>
+                                <div id="list-profs" class="space-y-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar"></div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-1 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+                            <div class="p-6">
+                                <div class="flex justify-between items-start mb-6">
+                                    <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center"><i data-lucide="book-open"></i></div>
+                                    <button onclick="openResourceModal('Subject')" class="text-xs font-bold text-amber-600 hover:underline">Add Subject</button>
+                                </div>
+                                <h3 class="font-bold text-lg mb-1">Course Curriculum</h3>
+                                <p class="text-xs text-gray-400 mb-2 italic">Official program subjects.</p>
+                                <input id="subj-search" type="text" placeholder="Search subjects..." onkeyup="refreshManagementLists()" class="w-full p-2 border rounded-lg text-xs mb-3 bg-gray-50 outline-none focus:ring-2 focus:ring-amber-700">
+                                <div class="flex gap-2 mb-4 flex-wrap" id="subject-sem-filter">
+                                    <button id="sem-all" onclick="setSubjectSemesterFilter('All')" class="px-3 py-1 text-[9px] font-bold rounded-lg border border-gray-300 hover:border-red-700 transition">All</button>
+                                    <button id="sem-first" onclick="setSubjectSemesterFilter('First Semester')" class="px-3 py-1 text-[9px] font-bold rounded-lg border border-gray-300 hover:border-red-700 transition">1st Sem</button>
+                                    <button id="sem-second" onclick="setSubjectSemesterFilter('Second Semester')" class="px-3 py-1 text-[9px] font-bold rounded-lg border border-gray-300 hover:border-red-700 transition">2nd Sem</button>
+                                    <button id="sem-summer" onclick="setSubjectSemesterFilter('Summer Term')" class="px-3 py-1 text-[9px] font-bold rounded-lg border border-gray-300 hover:border-red-700 transition">Summer</button>
+                                </div>
+                                <div id="list-subjects" class="space-y-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar"></div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-1 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+                            <div class="p-6">
+                                <div class="flex justify-between items-start mb-6">
+                                    <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center"><i data-lucide="layers"></i></div>
+                                    <button onclick="openResourceModal('Section')" class="text-xs font-bold text-emerald-600 hover:underline">Add Section</button>
+                                </div>
+                                <h3 class="font-bold text-lg mb-1">Active Sections</h3>
+                                <p class="text-xs text-gray-400 mb-4 italic">Class groupings for this term.</p>
+                                <div id="list-sections" class="space-y-2 max-h-80 overflow-y-auto pr-2 custom-scrollbar"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- FACULTY LOADING (Export removed here) -->
+                <section id="sec-loading" class="hidden space-y-6">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-xl font-bold">Faculty Assignments</h2>
+                        <button onclick="openLoadModal()" class="px-4 py-2 pup-maroon text-white rounded text-xs font-bold shadow-lg hover:bg-red-900 flex items-center"><i data-lucide="plus-circle" class="w-3 h-3 mr-2"></i> New Assignment</button>
+                    </div>
+                    <div class="bg-white rounded-2xl border overflow-hidden shadow-sm">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-gray-50 border-b text-[10px] uppercase font-bold text-gray-500"><tr><th class="p-4">Professor</th><th class="p-4">Subject</th><th class="p-4">Section</th><th class="p-4">Schedule</th><th class="p-4 text-right">Actions</th></tr></thead>
+                            <tbody id="load-table"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- NEW: FACULTY WORKLOADS CALENDAR VIEW -->
+                <section id="sec-workloads" class="hidden space-y-6">
+                    <div class="flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-2xl border gap-4">
+                        <div class="flex items-center space-x-4">
+                                <div>
+                                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Select Professor:</label>
+                                <select id="view-faculty-select" onchange="renderFacultyCalendar()" class="p-2.5 border rounded-xl font-bold text-sm text-red-800 bg-gray-50 outline-none w-64"></select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Program Filter:</label>
+                                <select id="workload-program-filter" onchange="renderFacultyCalendar()" class="p-2.5 border rounded-xl font-bold text-sm bg-gray-50 outline-none w-52">
+                                    <option value="All">All Programs</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button onclick="downloadWorkload()" class="px-4 py-2.5 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-black transition flex items-center"><i data-lucide="download" class="w-3.5 h-3.5 mr-2"></i> Export Profile Workload</button>
+                    </div>
+                    <div id="faculty-calendar-container" class="w-full bg-white rounded-2xl border p-6 shadow-sm"></div>
+                </section>
+
+                <!-- SECTION TIMETABLES SECTION -->
+                <section id="sec-sections" class="hidden space-y-6">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 rounded-2xl border border-gray-100 gap-4">
+                                <div class="flex items-center space-x-3">
+                            <label class="text-[10px] font-bold text-gray-400 uppercase">Select Section:</label>
+                            <select id="view-section-select" onchange="renderTimetable()" class="p-2 border rounded-lg font-bold text-sm text-red-800 outline-none"></select>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="exportSectionTimetable()" class="px-4 py-2 border-2 border-red-800 text-red-800 rounded-lg text-xs font-bold hover:bg-red-50 flex items-center">
+                                <i data-lucide="download-cloud" class="w-3 h-3 mr-2"></i> Export Section Schedule
+                            </button>
+                            <button id="toggle-fullcal" onclick="toggleCalendarFullscreen('sections')" title="Fullscreen" class="w-8 h-8 flex items-center justify-center rounded border text-slate-600 hover:bg-gray-100">
+                                <i data-lucide="maximize" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="timetable-container" class="w-full"></div>
+                </section>
+
+                <!-- ROOM SCHEDULES SECTION -->
+                <section id="sec-rooms" class="hidden space-y-6">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 rounded-2xl border border-gray-100 gap-4">
+                        <div class="flex items-center space-x-3">
+                            <label class="text-[10px] font-bold text-gray-400 uppercase">Select Room:</label>
+                            <select id="view-room-select" onchange="renderRoomSchedulePreview()" class="p-2 border rounded-lg font-bold text-sm text-red-800 outline-none"></select>
+                        </div>
+                        <div class="flex flex-wrap gap-2 items-center">
+                            <button onclick="exportRoomSchedule()" class="px-4 py-2 border-2 border-slate-800 text-slate-800 rounded-lg text-xs font-bold hover:bg-slate-50 flex items-center">
+                                <i data-lucide="download-cloud" class="w-3 h-3 mr-2"></i> Export Room Schedule
+                            </button>
+                            <button title="Fullscreen" onclick="toggleCalendarFullscreen('rooms')" class="w-8 h-8 flex items-center justify-center rounded border text-slate-600 hover:bg-gray-100">
+                                <i data-lucide="maximize" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="room-schedule-preview" class="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm text-sm text-gray-700"></div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- RESOURCE MODAL -->
+    <div id="modal-resource" class="fixed inset-0 bg-black/50 z-[300] hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-sm p-8 shadow-2xl">
+            <h3 id="res-modal-title" class="text-lg font-bold mb-1">Add Resource</h3>
+            <p class="text-[10px] text-gray-400 uppercase font-bold mb-6 tracking-widest">Official Registration</p>
+            <input id="res-input" type="text" class="w-full p-3 border rounded-xl mb-4 text-sm bg-gray-50 outline-none focus:ring-2 focus:ring-red-800" placeholder="Enter name/code...">
+            <div id="res-subject-extra" style="display:none;" class="mb-6">
+                <label class="text-[10px] font-bold uppercase text-gray-400">Semester</label>
+                <select id="res-semester" class="w-full p-3 border rounded-xl mt-2 text-sm bg-gray-50 outline-none focus:ring-2 focus:ring-red-800">
+                    <option value="First Semester">First Semester</option>
+                    <option value="Second Semester">Second Semester</option>
+                    <option value="Summer Term">Summer Term</option>
+                </select>
+            </div>
+            <div id="res-prof-extra" style="display:none;" class="mb-6">
+                <label class="text-[10px] font-bold uppercase text-gray-400">Faculty Type</label>
+                <select id="res-faculty-type" class="w-full p-3 border rounded-xl mt-2 text-sm bg-gray-50 outline-none focus:ring-2 focus:ring-red-800">
+                    <option value="Designee">Designee Faculty</option>
+                    <option value="Regular">Regular Faculty</option>
+                    <option value="Part-Time">Part-Time Faculty</option>
+                </select>
+            </div>
+            <div class="flex space-x-3">
+                <button onclick="saveResource()" class="flex-1 py-3 pup-maroon text-white rounded-xl font-bold hover:bg-red-900 shadow-lg">Save</button>
+                <button onclick="closeModal('modal-resource')" class="flex-1 py-3 bg-gray-100 rounded-xl font-bold hover:bg-gray-200 transition">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCHOOL YEAR MODAL -->
+<div id="modal-sy" class="fixed inset-0 bg-black/50 z-[350] hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-sm p-8 shadow-2xl">
+        <div class="flex items-center space-x-3 mb-6">
+            <div class="p-2 bg-red-50 text-red-800 rounded-lg"><i data-lucide="calendar-plus"></i></div>
+            <div>
+                <h3 class="text-lg font-bold">Academic Years</h3>
+                <p class="text-[10px] text-gray-400 uppercase font-bold tracking-widest">University Configuration</p>
+            </div>
+        </div>
+        
+        <div class="space-y-4 mb-6">
+            <div id="sy-list-container" class="max-h-32 overflow-y-auto space-y-2 mb-4 custom-scrollbar">
+                <!-- Current years listed here -->
+            </div>
+            <div class="border-t pt-4">
+                <label class="text-[10px] font-bold text-gray-400 uppercase">Add New Year</label>
+                <input id="new-sy-input" type="text" class="w-full p-3 border rounded-xl text-sm bg-gray-50 outline-none focus:ring-2 focus:ring-red-800" placeholder="e.g., A.Y. 2027-2028">
+            </div>
+        </div>
+
+        <div class="flex space-x-3">
+            <button onclick="addSY()" class="flex-1 py-3 pup-maroon text-white rounded-xl font-bold hover:bg-red-900 shadow-lg transition">Add Year</button>
+            <button onclick="closeModal('modal-sy')" class="flex-1 py-3 bg-gray-100 rounded-xl font-bold hover:bg-gray-200 transition">Close</button>
+        </div>
+    </div>
+</div>
+
+    <div id="modal-load" class="fixed inset-0 bg-black/50 z-[300] hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl">
+            <div class="pup-maroon p-6 text-white font-bold flex justify-between items-center"><span id="modal-load-title">ASSIGN CLASS LOAD</span><button onclick="closeModal('modal-load')"><i data-lucide="x"></i></button></div>
+            <div class="p-8 grid grid-cols-2 gap-6">
+                <div class="col-span-2">
+                    <label class="text-[10px] font-bold uppercase text-gray-400">Professor</label>
+                    <select id="ld-prof" onchange="refreshTimeSlots()" class="w-full p-3 border rounded-xl text-sm bg-gray-50"></select>
+                </div>
+                    <div class="col-span-2 grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-bold uppercase text-gray-400">Load Category</label>
+                        <select id="ld-category" onchange="refreshTimeSlots()" class="w-full p-3 border rounded-xl text-sm bg-gray-50">
+                            <option value="Regular Load">Regular Load</option>
+                            <option value="Part-Time Load">Part-Time Load</option>
+                            <option value="Temporary Load">Temporary Load</option>
+                            <option value="Substitute Load">Substitute Load</option>
+                        </select>
+                    </div>
+                    <div><label class="text-[10px] font-bold uppercase text-gray-400">Units</label><input id="ld-units" onchange="refreshTimeSlots()" type="number" min="1" value="3" class="w-full p-3 border rounded-xl text-sm"></div>
+                </div>
+                <div class="col-span-2"><label class="text-[10px] font-bold uppercase text-gray-400">Subject</label><select id="ld-sub" onchange="onSubjectChange()" class="w-full p-3 border rounded-xl text-sm"></select></div>
+                <div><label class="text-[10px] font-bold uppercase text-gray-400">Section</label><select id="ld-sec" onchange="refreshTimeSlots()" class="w-full p-3 border rounded-xl text-sm"></select></div>
+                <div><label class="text-[10px] font-bold uppercase text-gray-400">Room</label><select id="ld-room" onchange="refreshTimeSlots()" class="w-full p-3 border rounded-xl text-sm"></select></div>
+                <div><label class="text-[10px] font-bold uppercase text-gray-400">Building</label><select id="ld-building" class="w-full p-3 border rounded-xl text-sm"></select></div>
+                <div><label class="text-[10px] font-bold uppercase text-gray-400">Day</label><select id="ld-day" onchange="refreshTimeSlots()" class="w-full p-3 border rounded-xl text-sm"><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option></select></div>
+                <div><label class="text-[10px] font-bold uppercase text-gray-400">Time</label><select id="ld-time" class="w-full p-3 border rounded-xl text-sm"></select></div>
+                <button id="save-load-button" onclick="saveLoad()" class="col-span-2 py-4 pup-maroon text-white rounded-2xl font-bold shadow-xl">Apply to Schedule</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+
+      // --- DATA ARCHITECTURE ---
+    const State = {
+        currentUser: null,
+        activeProgram: "Information Technology",
+        subjectSemesterFilter: 'All',
+        facultyTypeFilter: 'All',
+        db: {
+            schoolYears: ["A.Y. 2024-2025", "A.Y. 2025-2026", "A.Y. 2026-2027"],
+            rooms: ["Room 201", "Room 202", "Lab A", "Lab B", "Audio Visual Room"],
+            buildings: ["New Building", "Old Building"],
+            programs: {
+                "General Academics": {
+                    profs: [],
+                    sections: [],
+                subjects: []
+                },
+                "Information Technology": { 
+                    profs: [
+                        { name: "Dr. Evelyn Macaraig", type: "Regular" }, 
+                        { name: "Ms. Nhicole", type: "Designee" }, 
+                        { name: "Prof. Ricardo Dela Cruz", type: "Part-Time" }
+                    ], 
+                    sections: ["BSIT 3-1", "BSIT 3-2", "BSIT 4-1"], 
+                    subjects: [
+                        { name: "Cloud Computing", units: 3, semester: "First Semester" },
+                        { name: "Cybersecurity", units: 3, semester: "Second Semester" },
+                        { name: "Database Admin", units: 3, semester: "First Semester" }
+                    ]
+                },
+                "Hospitality Management": { 
+                    profs: [
+                        { name: "Chef Marco Pierre", type: "Regular" }, 
+                        { name: "Chef Linda Gomez", type: "Part-Time" }
+                    ], 
+                    sections: ["BSHM 1-1", "BSHM 2-2"], 
+                    subjects: [
+                        { name: "Kitchen Operations", units: 3, semester: "First Semester" },
+                        { name: "Front Office Mgmt", units: 3, semester: "Second Semester" }
+                    ]
+                },
+                "Computer Engineering": {
+                    profs: [
+                        { name: "Engr. Antonio Santos", type: "Regular" }, 
+                        { name: "Engr. Sherwin Z.", type: "Designee" }
+                    ],
+                    sections: ["BSCpE 1-1", "BSCpE 3-1"],
+                    subjects: [
+                        { name: "Logic Circuits", units: 3, semester: "First Semester" },
+                        { name: "Embedded Systems", units: 3, semester: "Second Semester" }
+                    ]
+                }
+            },
+            loads: [],
+            noClassDays: {} 
+        }
+    };
+
+        const Users = { "aide_pq": "aide123", "head_pq": "head123" };
+        const Days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+        const TimeStarts = [
+            "07:00 AM", "07:30 AM", "08:00 AM", "08:30 AM", "09:00 AM", "09:30 AM",
+            "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM", "12:00 PM", "12:30 PM",
+            "01:00 PM", "01:30 PM", "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM",
+            "04:00 PM", "04:30 PM", "05:00 PM", "05:30 PM", "06:00 PM", "06:30 PM",
+            "07:00 PM", "07:30 PM", "08:00 PM", "08:30 PM", "09:00 PM"
+        ];
+
+        // Limit used in some calculations; set to 9:00 PM to match calendar
+        const TimeEndLimit = "09:00 PM";
+
+        function parseTimeStr(timeStr) {
+            const [time, period] = timeStr.split(' ');
+            let [hours, minutes] = time.split(':').map(Number);
+            if (period === 'PM' && hours !== 12) hours += 12;
+            if (period === 'AM' && hours === 12) hours = 0;
+            return hours * 60 + minutes;
+        }
+
+    function formatTime(minutes) {
+        const period = minutes >= 720 ? 'PM' : 'AM';
+        let h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        if (h === 0) h = 12;
+        if (h > 12) h -= 12;
+        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} ${period}`;
+    }
+
+    function getTimeRange(start, units) {
+        const startMinutes = parseTimeStr(start);
+        const endMinutes = startMinutes + units * 60;
+        return `${start} - ${formatTime(endMinutes)}`;
+    }
+
+    function parseTimeRange(range) {
+        const [start] = range.split(' - ');
+        return { start: parseTimeStr(start), end: parseTimeStr(range.split(' - ')[1]) };
+    }
+
+    function rangesOverlap(a, b) {
+        return a.start < b.end && b.start < a.end;
+    }
+
+    function findConflict(day, target, prof, room, sec, ignoreLoadId = null) {
+        // Returns the first conflicting load or null
+        return State.db.loads.find(l => {
+            if (ignoreLoadId && l.id === ignoreLoadId) return false;
+            if (l.day !== day) return false;
+            const other = parseTimeRange(l.time);
+            if (!rangesOverlap(target, other)) return false;
+            if (l.prof === prof) return true;
+            if (l.room === room) return true;
+            if (l.sec === sec) return true;
+            return false;
+        }) || null;
+    }
+
+    const savedData = localStorage.getItem('schedulerData');
+    if (savedData) {
+        try {
+            State.db = JSON.parse(savedData);
+        } catch (e) {
+            console.error('Failed to parse schedulerData, using defaults');
+        }
+        
+    // Preserve default arrays when saved data is incomplete.
+    State.db.schoolYears = State.db.schoolYears || ["A.Y. 2024-2025", "A.Y. 2025-2026", "A.Y. 2026-2027"];
+    State.db.rooms = State.db.rooms || ["Room 201", "Room 202", "Lab A", "Lab B", "Audio Visual Room"];
+    State.db.buildings = State.db.buildings || ["New Building", "Old Building"];
+    State.db.programs = State.db.programs || {};
+    State.db.loads = State.db.loads || [];
+    State.db.noClassDays = State.db.noClassDays || {};
+
+    for (const progName in State.db.programs) {
+        const prog = State.db.programs[progName];
+        prog.profs = prog.profs || [];
+        prog.sections = prog.sections || [];
+        prog.subjects = prog.subjects || [];
+        
+        // Migrate old string profs to object format
+        if (prog.profs.length > 0 && typeof prog.profs[0] === 'string') {
+            prog.profs = prog.profs.map(name => ({ name, type: 'Regular' }));
+        }
+        
+        // Migrate old string subjects to object format
+        if (prog.subjects.length > 0 && typeof prog.subjects[0] === 'string') {
+            prog.subjects = prog.subjects.map(name => ({ name, units: 3, semester: 'First Semester' }));
+        }
+    }
+}
+
+const loginBackgrounds = [
+    'image1.jpg',
+    'image2.jpg',
+    'image3.jpg',
+    'image4.jpg',
+    'image5.jpg'
+
+];
+let currentLoginBackground = 0;
+
+function setLoginBackground(index) {
+    const overlay = document.getElementById('login-overlay');
+    const pattern = document.getElementById('login-bg-pattern');
+    if (!overlay || !pattern) return;
+
+    const url = loginBackgrounds[index];
+    overlay.style.backgroundImage = `linear-gradient(rgba(15,23,42,0.75), rgba(15,23,42,0.85)), url('${url}')`;
+    overlay.style.backgroundPosition = 'center';
+    overlay.style.backgroundSize = 'cover';
+    pattern.style.backgroundImage = `url('${url}')`;
+    pattern.style.backgroundRepeat = 'no-repeat';
+    pattern.style.backgroundPosition = 'center';
+    pattern.style.backgroundSize = 'cover';
+}
+
+function cycleLoginBackground() {
+    currentLoginBackground = (currentLoginBackground + 1) % loginBackgrounds.length;
+    setLoginBackground(currentLoginBackground);
+}
+
+function initLoginBackgroundLoop() {
+    setLoginBackground(currentLoginBackground);
+    setInterval(cycleLoginBackground, 7000);
+}
+
+initLoginBackgroundLoop();
+
+// --- AUTH ---
+function attemptLogin() {
+    const u = document.getElementById('login-user').value;
+    const p = document.getElementById('login-pass').value;
+    const err = document.getElementById('login-error');
+
+    if (Users[u] && Users[u] === p) {
+        State.currentUser = u === 'head_pq' ? 'Academic Head' : 'Academic Aide';
+        document.getElementById('login-overlay').style.display = 'none';
+        document.getElementById('app').classList.remove('hidden');
+        document.getElementById('display-role').innerText = State.currentUser;
+        initUI();
+    } else {
+        err.classList.remove('hidden');
+    }
+}
+
+function handleLogout() { location.reload(); }
+
+// --- CORE UI ---
+function initUI() {
+    document.getElementById('current-date').innerText = new Date().toDateString();
+    
+    // Render Sidebar Programs
+    const progNav = document.getElementById('sidebar-programs');
+    progNav.innerHTML = Object.keys(State.db.programs).map(p => `
+        <button onclick="setProgram('${p}')" class="w-full text-left p-3 rounded-lg text-xs hover:bg-white/10 transition-all ${p === State.activeProgram ? 'bg-yellow-500 text-red-900 font-bold' : ''}">
+            ${p}
+        </button>
+    `).join('');
+
+    // Update Dash Stats
+    const prog = State.db.programs[State.activeProgram];
+    document.getElementById('dash-prof-count').innerText = prog.profs.length;
+    document.getElementById('dash-prog-count').innerText = Object.keys(State.db.programs).length;
+    document.getElementById('dash-load-count').innerText = State.db.loads.filter(l => l.program === State.activeProgram).length;
+    // Dashboard total units removed; faculty workload shows per-professor totals across programs
+    document.getElementById('header-prog-display').innerText = State.activeProgram;
+    updateHeaderTime();
+    if (!headerTimeInterval) headerTimeInterval = setInterval(updateHeaderTime, 1000);
+
+    renderSYDropdown(); // Added this call
+    // Initialize semester and faculty type filters
+    setSubjectSemesterFilter(State.subjectSemesterFilter);
+    setFacultyTypeFilter(State.facultyTypeFilter);
+    refreshManagementLists();
+    renderLoadTable();
+    updateSectionDropdowns();
+    updateRoomDropdowns();
+    updateFacultyWorkloadDropdown();
+    renderRoomSchedulePreview();
+    lucide.createIcons();
+}
+
+// --- SY MANAGEMENT ---
+function renderSYDropdown() {
+    const sel = document.getElementById('sy-selector');
+    const currentVal = sel.value || "A.Y. 2025-2026";
+    sel.innerHTML = State.db.schoolYears.map(sy => 
+        `<option ${sy === currentVal ? 'selected' : ''}>${sy}</option>`
+    ).join('');
+}
+
+function openSYModal() {
+    const container = document.getElementById('sy-list-container');
+    container.innerHTML = State.db.schoolYears.map(sy => `
+        <div class="flex justify-between items-center p-2 bg-gray-50 rounded-lg text-xs font-bold text-gray-600">
+            <span>${sy}</span>
+            <i data-lucide="check-circle-2" class="w-3 h-3 text-emerald-500"></i>
+        </div>
+    `).join('');
+    document.getElementById('modal-sy').style.display = 'flex';
+    lucide.createIcons();
+}
+
+function addSY() {
+    const input = document.getElementById('new-sy-input');
+    const newVal = input.value.trim();
+    if (newVal && !State.db.schoolYears.includes(newVal)) {
+        State.db.schoolYears.push(newVal);
+        State.db.schoolYears.sort(); 
+        input.value = "";
+        renderSYDropdown();
+        openSYModal(); 
+    } else {
+        alert("Please enter a unique academic year.");
+    }
+}
+
+// --- CORE LOGIC ---
+function setProgram(p) {
+    State.activeProgram = p;
+    initUI();
+}
+
+function navTo(id) {
+    ['dashboard', 'management', 'loading', 'workloads', 'sections', 'rooms'].forEach(s => {
+        document.getElementById(`sec-${s}`).classList.add('hidden');
+        document.getElementById(`nav-${s}`).classList.remove('active-nav');
+    });
+    document.getElementById(`sec-${id}`).classList.remove('hidden');
+    document.getElementById(`nav-${id}`).classList.add('active-nav');
+    if (id === 'sections') renderTimetable();
+    if (id === 'rooms') renderRoomSchedulePreview();
+    if (id === 'workloads') renderFacultyCalendar();
+}
+
+function refreshTimeSlots() {
+    const day = document.getElementById('ld-day').value;
+    const prof = document.getElementById('ld-prof').value;
+    const sec = document.getElementById('ld-sec').value;
+    const room = document.getElementById('ld-room').value;
+    const sub = document.getElementById('ld-sub');
+    const category = document.getElementById('ld-category').value;
+    const unitsInput = document.getElementById('ld-units');
+
+    const totals = getProfessorLoadTotals(prof);
+    const remaining = Math.max(0, 45 - totals.total);
+    const categorySelect = document.getElementById('ld-category');
+
+    if (categorySelect) {
+        Array.from(categorySelect.options).forEach(option => {
+            if (option.value === 'Regular Load') option.disabled = totals.regular >= 6 || remaining <= 0;
+            if (option.value === 'Part-Time Load') option.disabled = totals.partTime >= 12 || remaining <= 0;
+            if (option.value === 'Temporary Load' || option.value === 'Substitute Load') option.disabled = remaining <= 0;
+        });
+    }
+
+    if (unitsInput) {
+        if (category === 'Regular Load') {
+            unitsInput.value = Math.min(6, Number(sub.selectedOptions[0]?.dataset?.units || 3));
+            unitsInput.min = 1;
+            unitsInput.max = Math.min(6, remaining || 6);
+        } else if (category === 'Part-Time Load') {
+            unitsInput.value = Math.min(12, Number(sub.selectedOptions[0]?.dataset?.units || 3));
+            unitsInput.min = 1;
+            unitsInput.max = Math.min(12, remaining || 12);
+        } else {
+                // For Temporary/Substitute loads default to the subject's unit value,
+                // but cap it to the remaining capacity. This avoids surprising large defaults.
+                const subjectDefault = Number(sub.selectedOptions[0]?.dataset?.units || 3);
+                const defaultVal = Math.min(subjectDefault, Math.max(1, remaining || 1));
+                unitsInput.value = defaultVal;
+                unitsInput.min = 1;
+                unitsInput.max = Math.max(1, remaining || 1);
+            }
+        if (Number(unitsInput.value) > Number(unitsInput.max)) unitsInput.value = unitsInput.max;
+    }
+    const units = Number(unitsInput?.value || sub.selectedOptions[0]?.dataset?.units || 3);
+    const select = document.getElementById('ld-time');
+    
+    const profType = getProfessorType(prof);
+
+    select.innerHTML = TimeStarts.map(start => {
+        const range = getTimeRange(start, units);
+        const target = parseTimeRange(range);
+        // Use helper to find a conflicting load (if any)
+        const conflictLoad = findConflict(day, target, prof, room, sec, currentLoadEditId);
+        let conflictReason = "";
+        if (conflictLoad) {
+            if (conflictLoad.prof === prof) conflictReason = `CONFLICT (Professor: ${conflictLoad.prof})`;
+            else if (conflictLoad.room === room) conflictReason = `CONFLICT (Room: ${conflictLoad.room})`;
+            else if (conflictLoad.sec === sec) conflictReason = `CONFLICT (Section: ${conflictLoad.sec})`;
+            else conflictReason = 'CONFLICT';
+        }
+
+        const isSuggested = !conflictLoad;
+        const label = isSuggested ? "⭐" : (conflictReason ? `(${conflictReason})` : "");
+
+        return `<option value="${range}" class="${conflictReason ? 'strikethrough-slot' : ''}" ${conflictReason ? 'disabled' : ''}>
+            ${range} ${label}
+        </option>`;
+    }).join('');
+}
+
+function onSubjectChange() {
+    const sub = document.getElementById('ld-sub');
+    const unitsInput = document.getElementById('ld-units');
+    const defaultUnits = Number(sub.selectedOptions[0]?.dataset?.units || 3);
+    if (unitsInput) unitsInput.value = defaultUnits;
+    refreshTimeSlots();
+}
+
+// --- RESOURCE MANAGEMENT ---
+let currentResType = "";
+let currentLoadEditId = null;
+let headerTimeInterval = null;
+
+function updateHeaderTime() {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const clock = document.getElementById('header-time');
+    if (clock) clock.innerText = `${hours}:${minutes}:${seconds}`;
+}
+
+function openResourceModal(type) {
+    currentResType = type;
+    document.getElementById('res-modal-title').innerText = `Add New ${type}`;
+    // Show subject semester selector when adding a Subject
+    const subjExtra = document.getElementById('res-subject-extra');
+    if (subjExtra) subjExtra.style.display = type === 'Subject' ? 'block' : 'none';
+    // Show faculty type selector when adding a Professor
+    const profExtra = document.getElementById('res-prof-extra');
+    if (profExtra) profExtra.style.display = type === 'Professor' ? 'block' : 'none';
+    document.getElementById('modal-resource').style.display = 'flex';
+}
+
+function saveResource() {
+    const val = document.getElementById('res-input').value.trim();
+    if(!val) return;
+    const defaultUnits = 3;
+    
+    if(currentResType === 'Program') {
+        State.db.programs[val] = { profs:[], sections:[], subjects:[] };
+    } else if(currentResType === 'Room') {
+        State.db.rooms.push(val); // Global Rooms
+    } else {
+        const prog = State.db.programs[State.activeProgram];
+        if(currentResType === 'Professor') {
+            const type = document.getElementById('res-faculty-type')?.value || 'Regular';
+            prog.profs.push({ name: val, type: type });
+        }
+        if(currentResType === 'Subject') {
+            const sem = document.getElementById('res-semester')?.value || 'First Semester';
+            prog.subjects.push({ name: val, units: defaultUnits, semester: sem });
+        }
+        if(currentResType === 'Section') prog.sections.push(val);
+    }
+    
+    document.getElementById('res-input').value = "";
+    closeModal('modal-resource');
+    localStorage.setItem('schedulerData', JSON.stringify(State.db));
+    initUI();
+}
+
+function refreshManagementLists() {
+    const p = State.db.programs[State.activeProgram];
+    document.getElementById('current-prog-label').innerText = State.activeProgram;
+
+    const getLabel = item => typeof item === 'string' ? item : item.name;
+    const renderItemProf = (item) => {
+    const label = getLabel(item);
+    const safeLabel = label.replace(/'/g, "\\'");
+    const type = typeof item === 'string' ? 'Regular' : item.type || 'Regular';
+    
+    // Fetch calculation tier payload
+    const breakdown = getFacultyLoadTierBreakdown(label);
+    const maxUnits = 45;
+    const percentage = (breakdown.total / maxUnits) * 100;
+    const statusColor = percentage >= 100 ? 'bg-red-600' : (percentage >= 80 ? 'bg-yellow-500' : 'bg-emerald-500');
+    
+    return `
+        <div class="p-3 bg-gray-50 rounded-xl border border-transparent hover:border-gray-200 hover:bg-white transition-all group">
+            <div class="flex items-start justify-between gap-4">
+                <div class="flex-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-[11px] font-bold text-gray-700">${label}</span>
+                        <span class="text-[8px] px-2 py-1 bg-blue-100 text-blue-700 rounded font-bold">${type} Faculty</span>
+                    </div>
+                    
+                    <div class="mt-2 text-[10px] text-slate-500">
+                        <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-slate-700">Workload details are available in Faculty Workloads</span>
+                    </div>
+                    
+                    ${renderProfessorWeeklyProfile(label)}
+                </div>
+                <div class="flex flex-col items-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                    <select onchange="updateProfessorType('${safeLabel}', this.value)" class="text-[10px] font-bold rounded-lg border border-gray-200 bg-white px-2 py-1">
+                        <option value="Regular" ${type === 'Regular' ? 'selected' : ''}>Regular</option>
+                        <option value="Part-Time" ${type === 'Part-Time' ? 'selected' : ''}>Part-Time</option>
+                    </select>
+                    <button onclick="deleteResource('${safeLabel}', 'Professor')" class="text-gray-300 hover:text-red-500 transition-all">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+};
+    
+    const renderItemSubj = (item) => {
+        const label = getLabel(item);
+        const sem = typeof item === 'string' ? 'First Semester' : (item.semester || 'First Semester');
+        return `
+            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-xl border border-transparent hover:border-gray-200 hover:bg-white transition-all group">
+                <div class="flex-1">
+                    <span class="text-[11px] font-bold text-gray-700">${label}</span>
+                    <span class="ml-2 text-[8px] px-2 py-1 bg-amber-100 text-amber-700 rounded font-bold">${sem}</span>
+                </div>
+                <button onclick="deleteResource('${label}', 'Subject')" class="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+            </div>
+        `;
+    };
+
+    // Filter faculty by type and search term
+    const facFilter = State.facultyTypeFilter || 'All';
+    const searchTerm = (document.getElementById('fac-search')?.value || '').toLowerCase();
+    // If filtering for Designee, aggregate designees across all programs
+    const profSource = (facFilter === 'Designee')
+        ? Object.values(State.db.programs).flatMap(pr => pr.profs || [])
+        : (p.profs || []);
+    const profsToShow = profSource.filter(pf => {
+        const type = (typeof pf === 'string') ? 'Regular' : (pf.type || 'Regular');
+        const name = (typeof pf === 'string') ? pf : pf.name;
+        const typeMatch = facFilter === 'All' ? true : type === facFilter;
+        const searchMatch = searchTerm === '' || name.toLowerCase().includes(searchTerm);
+        return typeMatch && searchMatch;
+    });
+    const profsHtml = profsToShow.map(x => renderItemProf(x)).join('');
+    const profMessage = facFilter === 'All' ? 'No professors found.' : `No available ${facFilter} professors.`;
+    document.getElementById('list-profs').innerHTML = profsHtml || empty(profMessage);
+    
+    // Filter subjects by semester and search term
+    const subjFilter = State.subjectSemesterFilter || 'All';
+    const searchTermSubj = (document.getElementById('subj-search')?.value || '').toLowerCase();
+    const subjectsToShow = (p.subjects || []).filter(s => {
+        const sem = (typeof s === 'string') ? 'First Semester' : (s.semester || 'First Semester');
+        const name = (typeof s === 'string') ? s : s.name;
+        const semMatch = subjFilter === 'All' ? true : sem === subjFilter;
+        const searchMatch = searchTermSubj === '' || name.toLowerCase().includes(searchTermSubj);
+        return semMatch && searchMatch;
+    });
+    document.getElementById('list-subjects').innerHTML = subjectsToShow.map(x => renderItemSubj(x)).join('') || empty();
+    
+    const renderItem = (item, type) => {
+        const label = getLabel(item);
+        return `
+            <div class="flex justify-between items-center p-3 bg-gray-50 rounded-xl border border-transparent hover:border-gray-200 hover:bg-white transition-all group">
+                <span class="text-[11px] font-bold text-gray-700">${label}</span>
+                <button onclick="deleteResource('${label}', '${type}')" class="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+            </div>
+        `;
+    };
+
+    document.getElementById('list-sections').innerHTML = p.sections.map(x => renderItem(x, 'Section')).join('') || empty();
+    lucide.createIcons();
+}
+
+function empty(message = 'No records found.') {
+    return `<div class="p-6 text-center text-gray-400 italic text-sm">${message}</div>`;
+}
+
+function deleteResource(name, type) {
+    if(!confirm(`Remove ${name}?`)) return;
+    const prog = State.db.programs[State.activeProgram];
+    if(type === 'Professor') prog.profs = prog.profs.filter(x => (typeof x === 'string' ? x : x.name) !== name);
+    if(type === 'Subject') prog.subjects = prog.subjects.filter(x => (typeof x === 'string' ? x : x.name) !== name);
+    if(type === 'Section') prog.sections = prog.sections.filter(x => x !== name);
+    localStorage.setItem('schedulerData', JSON.stringify(State.db));
+    initUI();
+}
+
+function updateProfessorType(name, newType) {
+    const prog = State.db.programs[State.activeProgram];
+    const prof = prog.profs.find(p => (typeof p === 'string' ? p : p.name) === name);
+    if (prof) {
+        if (typeof prof === 'string') {
+            const index = prog.profs.indexOf(prof);
+            prog.profs[index] = { name: prof, type: newType };
+        } else {
+            prof.type = newType;
+        }
+        localStorage.setItem('schedulerData', JSON.stringify(State.db));
+        refreshManagementLists();
+        renderLoadTable();
+    }
+}
+
+function getProfessorType(profName) {
+    const prof = Object.values(State.db.programs).flatMap(prog => prog.profs || []).find(p => (typeof p === 'string' ? p : p.name) === profName);
+    return (typeof prof === 'string') ? 'Regular' : (prof?.type || 'Regular');
+}
+
+function getProfessorLoadTotals(profName) {
+    // Returns unit totals grouped by load type and overall total for a professor (all programs)
+    const profLoads = State.db.loads.filter(l => l.prof === profName);
+    return profLoads.reduce((acc, l) => {
+        const u = Number(l.units || 3);
+        acc.total += u;
+        const t = l.loadType || 'Regular Load';
+        if (t === 'Regular Load') acc.regular += u;
+        else if (t === 'Part-Time Load') acc.partTime += u;
+        else if (t === 'Temporary Load') acc.temporary += u;
+        else if (t === 'Substitute Load') acc.substitute += u;
+        return acc;
+    }, { total: 0, regular: 0, partTime: 0, temporary: 0, substitute: 0 });
+}
+
+function getProfessorLoadByDay(profName) {
+    return State.db.loads
+        .filter(l => l.prof === profName)
+        .reduce((map, l) => {
+            map[l.day] = (map[l.day] || 0) + (l.units || 3);
+            return map;
+        }, {});
+}
+
+function getFacultyLoadSummary(profName, programFilter = 'All') {
+    return State.db.loads
+        .filter(l => l.prof === profName && (programFilter === 'All' ? true : l.program === programFilter))
+        .reduce((summary, load) => {
+            const type = load.loadType || 'Regular Load';
+            const units = Number(load.units || 3);
+            if (type === 'Regular Load') summary.regular += units;
+            else if (type === 'Part-Time Load') summary.partTime += units;
+            else if (type === 'Temporary Load') summary.temporary += units;
+            else if (type === 'Substitute Load') summary.substitute += units;
+            summary.totalUnits += units;
+            summary.totalLoads += 1;
+            return summary;
+        }, { totalUnits: 0, totalLoads: 0, regular: 0, partTime: 0, temporary: 0, substitute: 0 });
+}
+
+function renderProfessorWeeklyProfile(profName) {
+    const daily = getProfessorLoadByDay(profName);
+    const cells = Days.map(day => {
+        const units = daily[day] || 0;
+        const classes = units === 0
+            ? 'bg-gray-100 border-gray-200 text-gray-400'
+            : units >= 6
+                ? 'bg-red-100 border-red-200 text-red-700'
+                : 'bg-emerald-100 border-emerald-200 text-emerald-700';
+        return `<div class="w-8 h-8 rounded-xl border ${classes} flex items-center justify-center text-[9px] font-bold">${units ? `${units}u` : '-'}</div>`;
+    }).join('');
+    return `<div class="grid grid-cols-7 gap-1 mt-3">${cells}</div>`;
+}
+
+function setSubjectSemesterFilter(val) {
+    State.subjectSemesterFilter = val;
+    ['All','First Semester','Second Semester','Summer Term'].forEach(v => {
+        const id = v === 'All' ? 'sem-all' : (v === 'First Semester' ? 'sem-first' : (v === 'Second Semester' ? 'sem-second' : 'sem-summer'));
+        const el = document.getElementById(id);
+        if (el) {
+            if (v === val) el.classList.add('bg-red-700','text-white');
+            else el.classList.remove('bg-red-700','text-white');
+        }
+    });
+    refreshManagementLists();
+}
+
+function setFacultyTypeFilter(val) {
+    State.facultyTypeFilter = val;
+    ['All','Designee','Regular','Part-Time'].forEach(v => {
+        const id = v === 'All' ? 'fac-all' : (v === 'Designee' ? 'fac-designee' : (v === 'Regular' ? 'fac-regular' : 'fac-parttime'));
+        const el = document.getElementById(id);
+        if (el) {
+            if (v === val) el.classList.add('bg-blue-700','text-white');
+            else el.classList.remove('bg-blue-700','text-white');
+        }
+    });
+    refreshManagementLists();
+}
+
+function promoteFaculty(name, currentType) {
+    const types = ['Part-Time', 'Regular', 'Designee'];
+    const currentIdx = types.indexOf(currentType);
+    const nextIdx = (currentIdx + 1) % types.length;
+    const newType = types[nextIdx];
+    
+    const prog = State.db.programs[State.activeProgram];
+    const prof = prog.profs.find(p => (typeof p === 'string' ? p : p.name) === name);
+    if (prof && typeof prof === 'object') {
+        prof.type = newType;
+        localStorage.setItem('schedulerData', JSON.stringify(State.db));
+        refreshManagementLists();
+    }
+}
+
+function calculateProfessorUnits(profName) {
+    // Aggregate units across ALL programs for the professor (global cap)
+    return State.db.loads
+        .filter(l => l.prof === profName)
+        .reduce((sum, l) => sum + (l.units || 3), 0);
+}
+
+function getProfessorMaxUnits(profName) {
+    // Every faculty member regardless of employment status has a cap of 45 units total
+    return 45; 
+}
+
+function canAssignLoad(profName, units, ignoreLoadId = null, loadType = null) {
+    // Gather existing loads for professor (exclude editing load)
+    const profLoads = State.db.loads.filter(l => l.prof === profName && l.id !== ignoreLoadId);
+    const totals = profLoads.reduce((acc, l) => {
+        const u = Number(l.units || 3);
+        acc.total += u;
+        if (l.loadType === 'Regular Load') acc.regular += u;
+        else if (l.loadType === 'Part-Time Load') acc.partTime += u;
+        else if (l.loadType === 'Temporary Load') acc.temporary += u;
+        else if (l.loadType === 'Substitute Load') acc.substitute += u;
+        return acc;
+    }, { total: 0, regular: 0, partTime: 0, temporary: 0, substitute: 0 });
+
+    const maxUnits = getProfessorMaxUnits(profName); // global cap (45)
+
+    // Per-type caps
+    const caps = {
+        'Regular Load': 6,
+        'Part-Time Load': 12
+    };
+
+    const wouldExceedType = loadType && caps[loadType]
+        ? ((loadType === 'Regular Load' ? totals.regular : totals.partTime) + units) > caps[loadType]
+        : false;
+
+    const wouldExceedProf = (totals.total + units) > maxUnits;
+
+    return {
+        canAssign: !wouldExceedType && !wouldExceedProf,
+        wouldExceedType,
+        wouldExceedProf,
+        totals,
+        caps,
+        maxUnits
+    };
+}
+
+function getFacultyLoadTierBreakdown(profName) {
+    const totalUnits = calculateProfessorUnits(profName);
+    
+    let regularLoad = Math.min(totalUnits, 6);
+    let partTimeLoad = 0;
+    let temporaryLoad = 0;
+    
+    if (totalUnits > 6) {
+        partTimeLoad = Math.min(totalUnits - 6, 12);
+    }
+    if (totalUnits > 18) {
+        temporaryLoad = Math.min(totalUnits - 18, 27);
+    }
+    
+    return {
+        total: totalUnits,
+        regular: regularLoad,
+        partTime: partTimeLoad,
+        temporary: temporaryLoad
+    };
+}
+
+// --- LOADING ---
+function openLoadModal(loadId = null) {
+    const p = State.db.programs[State.activeProgram];
+    if (!p) return alert("No active program selected!");
+    
+    const load = loadId ? State.db.loads.find(l => l.id === loadId) : null;
+    const editMode = Boolean(load);
+    currentLoadEditId = load ? load.id : null;
+
+    // Ensure arrays exist
+    if (!p.profs) p.profs = [];
+    if (!p.subjects) p.subjects = [];
+    if (!p.sections) p.sections = [];
+    if (!State.db.rooms) State.db.rooms = [];
+    if (!State.db.buildings) State.db.buildings = [];
+    
+    if(p.profs.length === 0 || p.sections.length === 0) return alert("Add faculty and sections first!");
+    
+    document.getElementById('modal-load-title').innerText = editMode ? 'EDIT ASSIGNMENT' : 'ASSIGN CLASS LOAD';
+    document.getElementById('save-load-button').innerText = editMode ? 'Update Assignment' : 'Apply to Schedule';
+    
+    // Populate professor dropdown with ALL professors across programs (deduplicated)
+    const allProfs = [...new Set(Object.values(State.db.programs).flatMap(pr => (pr.profs || []).map(x => (typeof x === 'string' ? x : x.name))))].sort((a,b) => a.localeCompare(b));
+    document.getElementById('ld-prof').innerHTML = allProfs.length ? allProfs.map(pname => `<option>${pname}</option>`).join('') : '<option disabled>No professors available</option>';
+    document.getElementById('ld-sub').innerHTML = p.subjects.map(s => {
+        const name = typeof s === 'string' ? s : s.name;
+        const units = typeof s === 'string' ? 3 : (s.units || 3);
+        return `<option value="${name}" data-units="${units}">${name} (${units}u)</option>`;
+    }).join('');
+    // Initialize units input to subject default for new assignments
+    const initialUnits = Number(document.getElementById('ld-sub').selectedOptions[0]?.dataset?.units || 3);
+    const unitsInput = document.getElementById('ld-units');
+    if (unitsInput && !load) unitsInput.value = initialUnits;
+    document.getElementById('ld-sec').innerHTML = p.sections.map(x => `<option>${x}</option>`).join('');
+    document.getElementById('ld-room').innerHTML = State.db.rooms.map(x => `<option>${x}</option>`).join('');
+    document.getElementById('ld-building').innerHTML = State.db.buildings.map(x => `<option>${x}</option>`).join('');
+    document.getElementById('ld-day').innerHTML = Days.map(x => `<option>${x}</option>`).join('');
+
+    if (load) {
+        document.getElementById('ld-prof').value = load.prof;
+        document.getElementById('ld-sub').value = load.sub;
+        document.getElementById('ld-sec').value = load.sec;
+        document.getElementById('ld-room').value = load.room;
+        document.getElementById('ld-building').value = load.building;
+        document.getElementById('ld-day').value = load.day;
+        document.getElementById('ld-units').value = load.units || 3;
+        
+        // Add this line to synchronize the Load Category element during edits:
+        document.getElementById('ld-category').value = load.loadType || "Regular Load";
+    } else {
+        // Reset to default classification label for a fresh schedule assignment form
+        document.getElementById('ld-category').value = "Regular Load";
+    }
+    
+    refreshTimeSlots();
+    if (load) {
+        document.getElementById('ld-time').value = load.time;
+    }
+    document.getElementById('modal-load').style.display = 'flex';
+    lucide.createIcons();
+}
+
+function saveLoad() {
+    const time = document.getElementById('ld-time').value;
+    const sub = document.getElementById('ld-sub').value;
+    const day = document.getElementById('ld-day').value;
+    const loadCategory = document.getElementById('ld-category').value;
+    const prof = document.getElementById('ld-prof').value;
+    const units = Math.max(1, Math.floor(Number(document.getElementById('ld-units')?.value || 3)));
+    
+    const capacityCheck = canAssignLoad(prof, units, currentLoadEditId, loadCategory);
+
+    // Limitation Requirement: Explicit Warning
+    if (!capacityCheck.canAssign) {
+        let warning = `⚠️ LOAD LIMIT REACHED for ${prof}!\n\n`;
+        if (capacityCheck.wouldExceedType) {
+            const cap = capacityCheck.caps[loadCategory] || 'N/A';
+            const used = loadCategory === 'Regular Load' ? capacityCheck.totals.regular : capacityCheck.totals.partTime;
+            warning += `- ${loadCategory} limit exceeded (${used + units}/${cap}u).\n`;
+        }
+        if (capacityCheck.wouldExceedProf) {
+            warning += `- This professor would exceed total allowable units (${capacityCheck.totals.total + units}/${capacityCheck.maxUnits}u).\n`;
+        }
+        warning += "\nAssignment cancelled.";
+        alert(warning);
+        return;
+    }
+    // Safety Check: Don't save if subject or time is missing
+    if(!time || !sub || !day) {
+        alert("Please ensure all fields (including Subject, Time, and Day) are filled.");
+        return;
+    }
+    
+    
+    const load = {
+        id: currentLoadEditId || Date.now(),
+        prof: prof,
+        sub: sub,
+        units: units,
+        loadType: loadCategory, // Capture the new field
+        sec: document.getElementById('ld-sec').value,
+        room: document.getElementById('ld-room').value,
+        building: document.getElementById('ld-building')?.value || "Main Building",
+        day: day,
+        time: time,
+        sy: document.getElementById('sy-selector').value,
+        program: State.activeProgram
+    };
+
+    // Check for conflicts with existing assignments (prof/room/section overlaps)
+    const parsedTarget = parseTimeRange(load.time);
+    const conflict = State.db.loads.find(l => {
+        if (l.id === load.id) return false; // ignore self when editing
+        if (l.day !== load.day) return false;
+        if (!rangesOverlap(parsedTarget, parseTimeRange(l.time))) return false;
+        if (l.prof === load.prof) return true;
+        if (l.room === load.room) return true;
+        if (l.sec === load.sec) return true;
+        return false;
+    });
+    if (conflict) {
+        alert(`Cannot assign: time conflict with existing assignment.\n\nConflicting assignment:\nProfessor: ${conflict.prof}\nRoom: ${conflict.room}\nSection: ${conflict.sec}\nTime: ${conflict.time}\nProgram: ${conflict.program}`);
+        return;
+    }
+
+    
+    if (currentLoadEditId) {
+        const existing = State.db.loads.find(l => l.id === currentLoadEditId);
+        if (existing) {
+            Object.assign(existing, load);
+        }
+    } else {
+        State.db.loads.push(load);
+    }
+
+    currentLoadEditId = null;
+
+    
+
+    // 2. Update the UI
+    closeModal('modal-load');
+    renderLoadTable();
+
+    // 3. Update the permanent Storage (Last Step)
+    localStorage.setItem('schedulerData', JSON.stringify(State.db));
+    initUI();
+}
+
+
+function editLoad(id) {
+    openLoadModal(id);
+}
+
+function deleteLoad(id) {
+    State.db.loads = State.db.loads.filter(l => l.id !== id);
+    renderLoadTable();
+    localStorage.setItem('schedulerData', JSON.stringify(State.db));
+    initUI();
+}
+
+function renderLoadTable() {
+    const data = State.db.loads.filter(l => l.program === State.activeProgram);
+    document.getElementById('load-table').innerHTML = data.map(l => {
+        const profType = getProfessorType(l.prof);
+        const profBadge = profType === 'Designee'
+            ? 'bg-red-100 text-red-700'
+            : profType === 'Part-Time'
+                ? 'bg-slate-100 text-slate-700'
+                : 'bg-emerald-100 text-emerald-700';
+                
+        // Style classification badges cleanly based on type
+        let categoryColor = "text-emerald-600 bg-emerald-50 border border-emerald-200";
+        if (l.loadType === "Part-Time Load") {
+            categoryColor = "text-blue-600 bg-blue-50 border border-blue-200";
+        } else if (l.loadType === "Temporary Load") {
+            categoryColor = "text-purple-600 bg-purple-50 border border-purple-200";
+        }
+
+        return `
+        <tr class="border-b hover:bg-gray-50 transition-colors">
+            <td class="p-4 font-bold text-red-900">
+                ${l.prof}<br>
+                <span class="mt-2 inline-flex px-2 py-1 rounded-full text-[10px] font-bold ${profBadge}">${profType} Faculty</span>
+            </td>
+            <td class="p-4 text-xs font-semibold">
+                <div class="text-slate-900 text-sm font-semibold mb-1">${l.sub} (${l.units || 3}u)</div>
+                <span class="inline-block text-[9px] px-2 py-0.5 rounded font-bold uppercase tracking-wider ${categoryColor}">
+                    ${l.loadType || 'Regular Load'}
+                </span>
+            </td>
+            <td class="p-4">
+                <div><span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-md text-[10px] font-bold">${l.sec}</span></div>
+                <div class="mt-2 text-[10px] text-slate-600">Room ${l.room}</div>
+            </td>
+            <td class="p-4 text-[10px] font-medium text-gray-500">
+                ${l.day}<br>
+                <span class="text-gray-900 font-bold">${l.time}</span><br>
+                <span class="text-[10px] font-semibold text-gray-700">${l.building}</span>
+            </td>
+            <td class="p-4 text-right space-x-2">
+                <button onclick="editLoad(${l.id})" class="text-blue-500 hover:underline text-[10px] font-bold">EDIT</button>
+                <button onclick="deleteLoad(${l.id})" class="text-red-500 hover:underline text-[10px] font-bold">CANCEL</button>
+            </td>
+        </tr>
+        `;
+    }).join('') || `<tr><td colspan="5" class="p-10 text-center text-gray-300 italic">No assignments found for this program.</td></tr>`;
+}
+
+// --- TIMETABLES ---
+function updateSectionDropdowns() {
+    const sel = document.getElementById('view-section-select');
+    const p = State.db.programs[State.activeProgram];
+    sel.innerHTML = p.sections.map(s => `<option>${s}</option>`).join('') || '<option disabled>No Sections</option>';
+}
+
+
+function updateRoomDropdowns() {
+    const sel = document.getElementById('view-room-select');
+    sel.innerHTML = State.db.rooms.map(r => `<option>${r}</option>`).join('') || '<option disabled>No Rooms</option>';
+    renderRoomSchedulePreview();
+}
+
+function renderRoomSchedulePreview() {
+    const preview = document.getElementById('room-schedule-preview');
+    if (!preview) return;
+
+    const room = document.getElementById('view-room-select')?.value;
+    const sy = document.getElementById('sy-selector')?.value;
+    if (!room) {
+        preview.innerHTML = '<div class="text-gray-500 italic">Select a room to preview its weekly schedule here.</div>';
+        return;
+    }
+
+    const loads = State.db.loads
+        .filter(l => l.room === room && l.sy === sy)
+        .sort((a, b) => {
+            if (a.day !== b.day) return Days.indexOf(a.day) - Days.indexOf(b.day);
+            return parseTimeRange(a.time).start - parseTimeRange(b.time).start;
+        });
+
+    if (loads.length === 0) {
+        preview.innerHTML = `<div class="text-gray-500 italic">No scheduled classes found for <strong>${room}</strong> in <strong>${sy}</strong>.</div>`;
+        return;
+    }
+
+    const scheduleMap = {};
+    const skipCell = {};
+    Days.forEach(day => {
+        scheduleMap[day] = {};
+        skipCell[day] = {};
+    });
+
+    loads.forEach(load => {
+        const start = load.time.split(' - ')[0];
+        const startIndex = TimeStarts.indexOf(start);
+        if (startIndex === -1) return;
+        const span = (load.units || 3) * 2;
+        scheduleMap[load.day][start] = { load, span };
+        for (let offset = 1; offset < span; offset++) {
+            const slot = TimeStarts[startIndex + offset];
+            if (slot) skipCell[load.day][slot] = true;
+        }
+    });
+
+    let html = `<div class="mb-4 flex flex-col sm:flex-row sm:justify-between gap-3">
+        <div>
+            <div class="text-xs uppercase tracking-widest text-gray-400">Room Calendar</div>
+            <div class="text-lg font-bold text-gray-900">${room}</div>
+            <div class="text-[10px] text-gray-500">Academic Year: ${sy}</div>
+        </div>
+        <div class="text-right text-[10px] text-gray-500">
+            <div>Program: ${State.activeProgram}</div>
+            <div>${loads.length} scheduled class${loads.length === 1 ? '' : 'es'}</div>
+        </div>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full border-collapse text-[11px]">
+            <thead>
+                <tr>
+                    <th class="border border-slate-300 bg-slate-100 px-3 py-2 text-left text-[10px] uppercase text-slate-500">Time</th>
+                    ${Days.map(day => `<th class="border border-slate-300 bg-slate-100 px-3 py-2 text-left text-[10px] uppercase text-slate-500">${day}</th>`).join('')}
+                </tr>
+            </thead>
+            <tbody>`;
+
+    TimeStarts.forEach(start => {
+        html += `<tr class="odd:bg-white even:bg-slate-50"><td class="border border-slate-300 px-3 py-2 text-[10px] font-semibold text-slate-600">${start}</td>`;
+        Days.forEach(day => {
+            if (skipCell[day][start]) {
+                return;
+            }
+            const entry = scheduleMap[day][start];
+            if (entry) {
+                const { load, span } = entry;
+                html += `<td rowspan="${span}" class="border border-slate-300 p-2 align-top bg-amber-100 text-slate-900">
+                    <div class="font-bold text-[11px]">${load.sub}</div>
+                    <div class="text-[10px] text-slate-700">${load.prof}</div>
+                    <div class="text-[9px] text-slate-500">${load.sec} · ${load.building}</div>
+                    <div class="text-[9px] text-slate-500">${load.units || 3}u</div>
+                    <div class="text-[9px] text-slate-500 mt-1">${load.time}</div>
+                </td>`;
+            } else {
+                html += `<td class="border border-slate-300 p-2 bg-white"></td>`;
+            }
+        });
+        html += `</tr>`;
+    });
+
+    html += `</tbody></table></div>`;
+    preview.innerHTML = html;
+}
+
+function updateFacultyWorkloadDropdown() {
+    const sel = document.getElementById('view-faculty-select');
+    const container = document.getElementById('faculty-calendar-container');
+    if (!sel || !container) return;
+    const profs = [...new Set(Object.values(State.db.programs).flatMap(prog => (prog.profs || []).map(x => (typeof x === 'string' ? x : x.name))))].sort((a, b) => a.localeCompare(b));
+    sel.innerHTML = profs.length
+        ? profs.map(p => `<option value="${p}">${p}</option>`).join('')
+        : '<option disabled>No professors available</option>';
+    // populate program filter
+    const pf = document.getElementById('workload-program-filter');
+    if (pf) {
+        const programs = ['All', ...Object.keys(State.db.programs)];
+        pf.innerHTML = programs.map(pr => `<option value="${pr}">${pr}</option>`).join('');
+    }
+    if (profs.length) {
+        renderFacultyCalendar();
+    } else {
+        container.innerHTML = '<div class="text-gray-500 italic">No faculty assignments available.</div>';
+    }
+}
+
+function renderFacultyCalendar() {
+    const container = document.getElementById('faculty-calendar-container');
+    const prof = document.getElementById('view-faculty-select')?.value;
+    if (!container) return;
+    if (!prof) {
+        container.innerHTML = '<div class="text-gray-500 italic">Select a professor to view workload.</div>';
+        return;
+    }
+    const programFilter = document.getElementById('workload-program-filter')?.value || 'All';
+    const loads = State.db.loads
+        .filter(l => l.prof === prof && (programFilter === 'All' ? true : l.program === programFilter))
+        .sort((a, b) => {
+            if (a.day !== b.day) return Days.indexOf(a.day) - Days.indexOf(b.day);
+            return parseTimeRange(a.time).start - parseTimeRange(b.time).start;
+        });
+    if (loads.length === 0) {
+        container.innerHTML = `<div class="text-gray-500 italic">No assignments found for ${prof}.</div>`;
+        return;
+    }
+
+    const summary = getFacultyLoadSummary(prof);
+    const colorMap = {
+        'Regular Load': 'bg-emerald-100 border-emerald-300 text-emerald-900',
+        'Part-Time Load': 'bg-sky-100 border-sky-300 text-sky-900',
+        'Temporary Load': 'bg-violet-100 border-violet-300 text-violet-900',
+        'Substitute Load': 'bg-amber-100 border-amber-300 text-amber-900'
+    };
+
+    const scheduleMap = {};
+    const skipCell = {};
+    Days.forEach(day => {
+        scheduleMap[day] = {};
+        skipCell[day] = {};
+    });
+    loads.forEach(load => {
+        const start = load.time.split(' - ')[0];
+        const startIndex = TimeStarts.indexOf(start);
+        if (startIndex === -1) return;
+        const span = (load.units || 3) * 2;
+        scheduleMap[load.day][start] = { load, span };
+        for (let offset = 1; offset < span; offset++) {
+            const slot = TimeStarts[startIndex + offset];
+            if (slot) skipCell[load.day][slot] = true;
+        }
+    });
+
+    const professorPrograms = [...new Set(loads.map(l => l.program))];
+    const programLabel = professorPrograms.length === 1 ? professorPrograms[0] : 'Multiple Programs';
+    let html = `<div class="mb-4 space-y-3">
+        <div class="flex flex-col sm:flex-row sm:justify-between gap-3">
+            <div>
+                <div class="text-xs uppercase tracking-widest text-gray-400">Faculty Workload Calendar</div>
+                <div class="text-lg font-bold text-gray-900">${prof}</div>
+                <div class="text-[10px] text-gray-500">Program: ${programLabel}</div>
+            </div>
+            <div class="grid grid-cols-4 gap-2 text-[10px]">
+                <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-900 font-bold">
+                    <div>${summary.regular}</div>
+                    <div class="text-[9px] text-slate-500">Regular</div>
+                </div>
+                <div class="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-sky-900 font-bold">
+                    <div>${summary.partTime}</div>
+                    <div class="text-[9px] text-slate-500">Part-Time</div>
+                </div>
+                <div class="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-violet-900 font-bold">
+                    <div>${summary.temporary}</div>
+                    <div class="text-[9px] text-slate-500">Temporary</div>
+                </div>
+                <div class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900 font-bold">
+                    <div>${summary.substitute}</div>
+                    <div class="text-[9px] text-slate-500">Substitute</div>
+                </div>
+            </div>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px]">
+            <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 font-bold">Total Loads<br><span class="text-xl">${summary.totalLoads}</span></div>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 font-bold">Total Units<br><span class="text-xl">${summary.totalUnits}u</span></div>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 font-bold">Academic Year<br><span class="text-xs text-slate-500">${document.getElementById('sy-selector')?.value || 'N/A'}</span></div>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 font-bold">Professor<br><span class="text-xs text-slate-500">${prof}</span></div>
+        </div>
+        <div class="grid grid-cols-4 gap-2 text-[10px]">
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-900 font-bold">Regular Load</div>
+            <div class="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-sky-900 font-bold">Part-Time Load</div>
+            <div class="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-violet-900 font-bold">Temporary Load</div>
+            <div class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900 font-bold">Substitute Load</div>
+        </div>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full border-collapse text-[11px]">
+            <thead>
+                <tr>
+                    <th class="border border-slate-300 bg-slate-100 px-3 py-2 text-left text-[10px] uppercase text-slate-500">Time</th>
+                    ${Days.map(day => `<th class="border border-slate-300 bg-slate-100 px-3 py-2 text-left text-[10px] uppercase text-slate-500">${day}</th>`).join('')}
+                </tr>
+            </thead>
+            <tbody>`;
+
+    TimeStarts.forEach(start => {
+        html += `<tr class="odd:bg-white even:bg-slate-50"><td class="border border-slate-300 px-3 py-2 text-[10px] font-semibold text-slate-600">${start}</td>`;
+        Days.forEach(day => {
+            if (skipCell[day][start]) {
+                return;
+            }
+            const entry = scheduleMap[day][start];
+            if (entry) {
+                const { load, span } = entry;
+                const styleClasses = colorMap[load.loadType] || colorMap['Regular Load'];
+                html += `<td rowspan="${span}" class="border border-slate-300 p-2 align-top ${styleClasses}">
+                    <div class="font-bold text-[11px]">${load.sub}</div>
+                    <div class="text-[10px] text-slate-700">${load.sec}</div>
+                    <div class="text-[9px] text-slate-500">${load.program}</div>
+                    <div class="text-[10px] text-slate-700">${load.time}</div>
+                    <div class="text-[9px] text-slate-600 mt-1">${load.room} · ${load.building}</div>
+                    <div class="mt-2 inline-flex px-2 py-1 rounded-full text-[10px] font-bold bg-white/80 text-slate-900">${load.loadType || 'Regular Load'}</div>
+                </td>`;
+            } else {
+                html += `<td class="border border-slate-300 p-2 bg-white"></td>`;
+            }
+        });
+        html += `</tr>`;
+    });
+    html += `</tbody></table></div>`;
+    container.innerHTML = html;
+}
+
+function downloadWorkload() {
+    const profileSelect = document.getElementById('view-faculty-select');
+    if (profileSelect && !document.getElementById('sec-workloads')?.classList.contains('hidden')) {
+        exportFacultyWorkload(profileSelect.value);
+        return;
+    }
+    const data = State.db.loads.filter(l => l.program === State.activeProgram);
+    if (data.length === 0) return alert('No assignments to export.');
+    exportProgramWorkload(data);
+}
+
+function exportFacultyWorkload(profName) {
+    if (!profName) return alert('Please select a professor to export.');
+    const data = State.db.loads
+        .filter(l => l.prof === profName)
+        .sort((a, b) => {
+            if (a.day !== b.day) return Days.indexOf(a.day) - Days.indexOf(b.day);
+            return parseTimeRange(a.time).start - parseTimeRange(b.time).start;
+        });
+    if (data.length === 0) return alert(`No workload data found for ${profName}.`);
+
+    const regular = data.filter(l => l.loadType === 'Regular Load');
+    const partTime = data.filter(l => l.loadType === 'Part-Time Load');
+    const temporary = data.filter(l => l.loadType === 'Temporary Load');
+    const substitute = data.filter(l => l.loadType === 'Substitute Load');
+    const summary = {
+        regular: regular.length,
+        partTime: partTime.length,
+        temporary: temporary.length,
+        substitute: substitute.length,
+        totalUnits: data.reduce((sum, l) => sum + (l.units || 3), 0),
+        totalLoads: data.length
+    };
+
+    const loadStyles = {
+        'Regular Load': { label: 'Regular Load', color: '#d1fae5', border: '#34d399', text: '#065f46' },
+        'Part-Time Load': { label: 'Part-Time Load', color: '#e0f2fe', border: '#38bdf8', text: '#0369a1' },
+        'Temporary Load': { label: 'Temporary Load', color: '#ede9fe', border: '#a78bfa', text: '#5b21b6' },
+        'Substitute Load': { label: 'Substitute Load', color: '#fef3c7', border: '#fbbf24', text: '#92400e' }
+    };
+
+    const makeSection = (title, loads, style) => {
+        let section = `<div class="section-title" style="background:${style.color};border:1px solid ${style.border};color:${style.text};padding:12px 14px;border-radius:12px;">${title}</div>`;
+        section += `<table><tr><th style="background:${style.border};color:white;">Program</th><th style="background:${style.border};color:white;">Subject</th><th style="background:${style.border};color:white;">Section</th><th style="background:${style.border};color:white;">Day</th><th style="background:${style.border};color:white;">Time</th><th style="background:${style.border};color:white;">Room</th><th style="background:${style.border};color:white;">Building</th><th style="background:${style.border};color:white;">Units</th></tr>`;
+        if (loads.length) {
+            loads.forEach(load => {
+                section += `<tr><td>${load.program}</td><td>${load.sub}</td><td>${load.sec}</td><td>${load.day}</td><td>${load.time}</td><td>${load.room}</td><td>${load.building}</td><td>${load.units || 3}</td></tr>`;
+            });
+        } else {
+            section += `<tr class="empty-row"><td colspan="8">No ${title.toLowerCase()} assignments</td></tr>`;
+        }
+        section += `</table>`;
+        return section;
+    };
+
+    let html = `<html><head><meta charset="UTF-8"><title>Workload - ${profName}</title><style>
+        body { font-family: Arial, sans-serif; padding: 24px; color: #111; background: #f8fafc; }
+        h1 { margin-bottom: 8px; font-size: 28px; }
+        p { margin: 4px 0; font-size: 14px; }
+        .header-panel { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+        .header-card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 16px; min-width: 180px; box-shadow: 0 1px 3px rgba(15,23,42,0.05); }
+        .header-card strong { display: block; margin-bottom: 6px; font-size: 12px; color: #475569; }
+        table { border-collapse: collapse; width: 100%; margin-bottom: 24px; background: white; border-radius: 12px; overflow: hidden; }
+        th, td { border: 1px solid #d1d5db; padding: 12px 10px; text-align: left; font-size: 13px; }
+        th { font-weight: 700; }
+        tr:nth-child(even) { background-color: #f8fafc; }
+        .section-title { margin-top: 26px; font-size: 16px; font-weight: 700; }
+        .empty-row td { text-align: center; color: #6b7280; font-style: italic; }
+        .summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
+        .summary-card { border-radius: 16px; padding: 16px; color: #111; box-shadow: 0 1px 3px rgba(15,23,42,0.08); }
+        .summary-card strong { display: block; margin-bottom: 10px; font-size: 12px; color: #475569; }
+    </style></head><body>
+    <h1>Faculty Workload</h1>
+    <div class="header-panel">
+        <div class="header-card"><strong>Professor</strong>${profName}</div>
+        <div class="header-card"><strong>Program</strong>${State.activeProgram}</div>
+        <div class="header-card"><strong>Academic Year</strong>${document.getElementById('sy-selector')?.value || ''}</div>
+        <div class="header-card"><strong>Generated</strong>${new Date().toLocaleDateString()}</div>
+    </div>
+    <div class="summary-grid">
+        <div class="summary-card" style="background:#d1fae5;border:1px solid #86efac;"><strong>Regular Loads</strong>${summary.regular}</div>
+        <div class="summary-card" style="background:#e0f2fe;border:1px solid #7dd3fc;"><strong>Part-Time Loads</strong>${summary.partTime}</div>
+        <div class="summary-card" style="background:#ede9fe;border:1px solid #c4b5fd;"><strong>Temporary Loads</strong>${summary.temporary}</div>
+        <div class="summary-card" style="background:#fef3c7;border:1px solid #fde68a;"><strong>Substitute Loads</strong>${summary.substitute}</div>
+    </div>
+    <div class="summary-grid">
+        <div class="summary-card"><strong>Total Loads</strong>${summary.totalLoads}</div>
+        <div class="summary-card"><strong>Total Units</strong>${summary.totalUnits}u</div>
+        <div class="summary-card"><strong></strong></div>
+        <div class="summary-card"><strong></strong></div>
+    </div>
+
+    ${makeSection('Regular Load', regular, loadStyles['Regular Load'])}
+    ${makeSection('Part-Time Load', partTime, loadStyles['Part-Time Load'])}
+    ${makeSection('Temporary Load', temporary, loadStyles['Temporary Load'])}
+    ${makeSection('Substitute Load', substitute, loadStyles['Substitute Load'])}
+
+    </body></html>`;
+
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Workload_${profName.replace(/\s+/g, '_')}_${new Date().getTime()}.html`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+function exportProgramWorkload(data) {
+    let html = `<html><head><meta charset="UTF-8"><title>Workload - ${State.activeProgram}</title><style>
+        body { font-family: Arial, sans-serif; padding: 20px; color: #111; }
+        table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+        th, td { border: 1px solid #333; padding: 10px; text-align: left; }
+        th { background-color: #800000; color: white; font-weight: bold; }
+        tr:nth-child(even) { background-color: #f7f7f7; }
+    </style></head><body>
+    <h1>Program Workload</h1>
+    <p><strong>Program:</strong> ${State.activeProgram}</p>
+    <table><tr><th>Professor</th><th>Subject</th><th>Section</th><th>Day</th><th>Time</th><th>Room</th><th>Building</th><th>Units</th><th>Category</th></tr>`;
+    data.forEach(load => {
+        html += `<tr><td>${load.prof}</td><td>${load.sub}</td><td>${load.sec}</td><td>${load.day}</td><td>${load.time}</td><td>${load.room}</td><td>${load.building}</td><td>${load.units || 3}</td><td>${load.loadType || 'Regular Load'}</td></tr>`;
+    });
+    html += `</table></body></html>`;
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ProgramWorkload_${State.activeProgram}_${new Date().getTime()}.html`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+function toggleNoClass(day) {
+    const sec = document.getElementById('view-section-select').value;
+    if(!State.db.noClassDays[sec]) State.db.noClassDays[sec] = [];
+    const idx = State.db.noClassDays[sec].indexOf(day);
+    if(idx > -1) State.db.noClassDays[sec].splice(idx, 1);
+    else State.db.noClassDays[sec].push(day);
+    renderTimetable();
+}
+
+function renderTimetable() {
+    const sec = document.getElementById('view-section-select').value;
+    const container = document.getElementById('timetable-container');
+    if(!sec) return container.innerHTML = "";
+    const sy = document.getElementById('sy-selector')?.value || '';
+
+    const loads = State.db.loads
+        .filter(l => l.sec === sec)
+        .sort((a, b) => {
+            if (a.day !== b.day) return Days.indexOf(a.day) - Days.indexOf(b.day);
+            return parseTimeRange(a.time).start - parseTimeRange(b.time).start;
+        });
+
+    const noClassDays = new Set(State.db.noClassDays[sec] || []);
+    const scheduleMap = {};
+    const skipCell = {};
+
+    Days.forEach(day => {
+        scheduleMap[day] = {};
+        skipCell[day] = {};
+    });
+
+    loads.forEach(load => {
+        const start = load.time.split(' - ')[0];
+        const startIndex = TimeStarts.indexOf(start);
+        if (startIndex === -1) return;
+        const span = (load.units || 3) * 2;
+        scheduleMap[load.day][start] = { load, span };
+        for (let offset = 1; offset < span; offset++) {
+            const slot = TimeStarts[startIndex + offset];
+            if (slot) skipCell[load.day][slot] = true;
+        }
+    });
+
+    let html = `<div class="mb-4 flex flex-col sm:flex-row sm:justify-between gap-3">
+        <div>
+            <div class="text-xs uppercase tracking-widest text-gray-400">Section Calendar</div>
+            <div class="text-lg font-bold text-gray-900">${sec}</div>
+            <div class="text-[10px] text-gray-500">Academic Year: ${sy}</div>
+        </div>
+        <div class="text-right text-[10px] text-gray-500">
+            <div class="text-[10px] text-gray-500">Program: ${State.activeProgram}</div>
+            <div>${loads.length} assigned class${loads.length === 1 ? '' : 'es'}</div>
+        </div>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full border-collapse text-[11px]">
+            <thead>
+                <tr>
+                    <th class="border border-slate-300 bg-slate-100 px-3 py-2 text-left text-[10px] uppercase text-slate-500">Time</th>
+                    ${Days.map(day => `<th class="border border-slate-300 bg-slate-100 px-3 py-2 text-left text-[10px] uppercase text-slate-500">${day}</th>`).join('')}
+                </tr>
+            </thead>
+            <tbody>`;
+
+    TimeStarts.forEach(start => {
+        html += `<tr class="odd:bg-white even:bg-slate-50"><td class="border border-slate-300 px-3 py-2 text-[10px] font-semibold text-slate-600">${start}</td>`;
+        Days.forEach(day => {
+            if (skipCell[day][start]) {
+                return;
+            }
+            if (noClassDays.has(day)) {
+                html += `<td class="border border-slate-300 p-2 bg-red-50 text-[10px] text-red-600">No Class</td>`;
+                return;
+            }
+            const entry = scheduleMap[day][start];
+            if (entry) {
+                const { load, span } = entry;
+                
+                // Color badges matching load classifications dynamically
+                let badgeColor = "bg-emerald-100 text-emerald-800 border-emerald-200";
+                if (load.loadType === "Part-Time Load") {
+                    badgeColor = "bg-blue-100 text-blue-800 border-blue-200";
+                } else if (load.loadType === "Temporary Load") {
+                    badgeColor = "bg-purple-100 text-purple-800 border-purple-200";
+                }
+
+                html += `<td rowspan="${span}" class="border border-slate-300 p-2 align-top bg-blue-50 text-slate-900">
+                    <div class="font-bold text-[11px]">${load.sub}</div>
+                    <div class="my-1">
+                        <span class="inline-block px-1.5 py-0.5 rounded text-[8px] font-bold uppercase border ${badgeColor}">
+                            ${load.loadType || 'Regular Load'}
+                        </span>
+                    </div>
+                    <div class="text-[10px] text-slate-700">${load.prof}</div>
+                    <div class="text-[9px] text-slate-500">${load.room} · ${load.building}</div>
+                    <div class="text-[9px] text-slate-500">${load.units || 3}u</div>
+                    <div class="text-[9px] text-slate-500 mt-1">${load.time}</div>
+                </td>`;
+            } else {
+                html += `<td class="border border-slate-300 p-2 bg-white"></td>`;
+            }
+        });
+        html += `</tr>`;
+    });
+
+    html += `</tbody></table></div>`;
+    container.innerHTML = html;
+    lucide.createIcons();
+}
+
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+function toggleCalendarFullscreen(target = null) {
+    document.body.classList.toggle('calendar-fullscreen');
+    // Re-render the requested view or the currently visible view to ensure layout updates
+    if (target === 'sections') {
+        renderTimetable();
+    } else if (target === 'rooms') {
+        renderRoomSchedulePreview();
+    } else {
+        const activeSection = document.querySelector('section:not(.hidden)')?.id;
+        if (activeSection === 'sec-sections') renderTimetable();
+        if (activeSection === 'sec-rooms') renderRoomSchedulePreview();
+    }
+    lucide.createIcons();
+}
+
+function downloadWorkload() {
+    const data = State.db.loads.filter(l => l.program === State.activeProgram);
+    if(data.length === 0) return alert("No assignments to export.");
+    
+    let html = `<html><head><meta charset="UTF-8"><title>Workload - ${State.activeProgram}</title><style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 10px; text-align: left; }
+        th { background-color: #800000; color: white; font-weight: bold; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        h2 { color: #800000; }
+    </style></head><body>
+    <h2>Faculty Workload: ${State.activeProgram}</h2>
+    <table><tr><th>Professor</th><th>Subject</th><th>Section</th><th>Day</th><th>Time</th><th>Room</th><th>Building</th><th>School Year</th></tr>`;
+    
+    data.sort((a, b) => {
+        if(a.day !== b.day) return Days.indexOf(a.day) - Days.indexOf(b.day);
+        return parseTimeRange(a.time).start - parseTimeRange(b.time).start;
+    }).forEach(load => {
+        html += `<tr><td>${load.prof}</td><td>${load.sub} (${load.units || 3}u)</td><td>${load.sec}</td><td>${load.day}</td><td>${load.time}</td><td>${load.room}</td><td>${load.building}</td><td>${load.sy}</td></tr>`;
+    });
+    
+    html += `</table></body></html>`;
+    
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Workload_${State.activeProgram}_${new Date().getTime()}.html`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+function exportSectionTimetable() {
+    const sec = document.getElementById('view-section-select').value;
+    if(!sec) return alert("Please select a section.");
+    
+    const data = State.db.loads.filter(l => l.sec === sec);
+    if(data.length === 0) return alert("No classes scheduled for this section.");
+    
+    let html = `<html><head><meta charset="UTF-8"><title>Timetable - ${sec}</title><style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 10px; text-align: left; }
+        th { background-color: #800000; color: white; font-weight: bold; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+    </style></head><body>
+    <h2>Section Timetable: ${sec}</h2>
+    <table><tr><th>Day</th><th>Time</th><th>Subject</th><th>Professor</th><th>Room</th><th>Building</th></tr>`;
+    
+    Days.forEach(day => {
+        const dayLoads = data.filter(l => l.day === day).sort((a,b) => parseTimeRange(a.time).start - parseTimeRange(b.time).start);
+        dayLoads.forEach(load => {
+            html += `<tr><td>${load.day}</td><td>${load.time}</td><td>${load.sub} (${load.units || 3}u)</td><td>${load.prof}</td><td>${load.room}</td><td>${load.building}</td></tr>`;
+        });
+    });
+    
+    html += `</table></body></html>`;
+    
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Timetable_${sec}_${new Date().getTime()}.html`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+function exportRoomSchedule() {
+    const room = document.getElementById('view-room-select').value;
+    const sy = document.getElementById('sy-selector').value;
+    if (!room) return alert('Please select a room to export.');
+
+    const data = State.db.loads
+        .filter(l => l.room === room && l.sy === sy)
+        .sort((a, b) => {
+            if (a.day !== b.day) return Days.indexOf(a.day) - Days.indexOf(b.day);
+            return parseTimeRange(a.time).start - parseTimeRange(b.time).start;
+        });
+
+    if (data.length === 0) return alert(`No schedule found for ${room} in ${sy}.`);
+
+    let html = `<html><head><meta charset="UTF-8"><title>Room Schedule - ${room}</title><style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 10px; text-align: left; }
+        th { background-color: #8dbf8d; color: #111; font-weight: bold; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        h2, p { margin: 0 0 12px; }
+    </style></head><body>
+    <h2>Room Schedule: ${room}</h2>
+    <p><strong>Academic Year:</strong> ${sy}</p>
+    <p><strong>Program:</strong> ${State.activeProgram}</p>
+    <table><tr><th>Day</th><th>Time</th><th>Course</th><th>Professor</th><th>Section</th><th>Program</th><th>Year</th><th>Building</th></tr>`;
+
+    data.forEach(load => {
+        html += `<tr><td>${load.day}</td><td>${load.time}</td><td>${load.sub} (${load.units || 3}u)</td><td>${load.prof}</td><td>${load.sec}</td><td>${load.program}</td><td>${load.sy}</td><td>${load.building}</td></tr>`;
+    });
+
+    html += `</table></body></html>`;
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `RoomSchedule_${room.replace(/\s+/g, '_')}_${new Date().getTime()}.html`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+    </script>
+</body>
+</html> 

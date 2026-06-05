@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PUP PQ Scheduler - Faculty Loading</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <div class="flex h-screen overflow-hidden">
+        <aside class="w-80 bg-[#7f0000] text-white flex flex-col justify-between border-r border-[#660000]">
+            <div>
+                <div class="p-6 flex items-center justify-between border-b border-[#660000]">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full overflow-hidden bg-white flex-shrink-0">
+                            <img src="PUP LOGO.png" onerror="this.src='https://placehold.co/150x150?text=PUP'" alt="Logo" class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <h2 class="text-sm font-bold tracking-wide uppercase">PUP PQ-SCHEDULER</h2>
+                            <p class="text-[10px] text-gray-200">Academic Management</p>
+                        </div>
+                    </div>
+                    <a href="index.html" class="text-gray-100 hover:text-gray-200 text-xs tracking-wide uppercase">LOGOUT</a>
+                </div>
+                <nav class="mt-6 space-y-1 px-4">
+                    <a href="dashboard.html" class="sidebar-item flex items-center px-4 py-3 text-sm rounded-lg transition-all space-x-3 text-gray-100 hover:text-white">
+                        <i data-lucide="grid" class="w-4 h-4 text-yellow-300"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="program-resources.html" class="sidebar-item flex items-center px-4 py-3 text-sm rounded-lg transition-all space-x-3 text-gray-100 hover:text-white">
+                        <i data-lucide="layers" class="w-4 h-4 text-yellow-300"></i>
+                        <span>Program Resources</span>
+                    </a>
+                    <a href="faculty-profile.html" class="sidebar-item flex items-center px-4 py-3 text-sm rounded-lg transition-all space-x-3 text-gray-100 hover:text-white">
+                        <i data-lucide="user-check" class="w-4 h-4 text-yellow-300"></i>
+                        <span>Faculty Profile</span>
+                    </a>
+                    <a href="faculty-loading.html" class="sidebar-item active-nav flex items-center px-4 py-3 text-sm rounded-lg transition-all space-x-3 text-gray-100 hover:text-white">
+                        <i data-lucide="package" class="w-4 h-4 text-yellow-300"></i>
+                        <span>Faculty Loading</span>
+                    </a>
+                    <a href="faculty-workloads.html" class="sidebar-item flex items-center px-4 py-3 text-sm rounded-lg transition-all space-x-3 text-gray-100 hover:text-white">
+                        <i data-lucide="book-open" class="w-4 h-4 text-yellow-300"></i>
+                        <span>Faculty Workloads</span>
+                    </a>
+                    <a href="section-timetables.html" class="sidebar-item flex items-center px-4 py-3 text-sm rounded-lg transition-all space-x-3 text-gray-100 hover:text-white">
+                        <i data-lucide="calendar" class="w-4 h-4 text-yellow-300"></i>
+                        <span>Section Timetables</span>
+                    </a>
+                    <a href="room-schedules.html" class="sidebar-item flex items-center px-4 py-3 text-sm rounded-lg transition-all space-x-3 text-gray-100 hover:text-white">
+                        <i data-lucide="map-pin" class="w-4 h-4 text-yellow-300"></i>
+                        <span>Room Schedules</span>
+                    </a>
+                </nav>
+                <div class="mt-8 px-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="text-[11px] font-semibold uppercase tracking-wider text-gray-300">Active Programs</div>
+                        <button onclick="addProgram()" class="text-[11px] font-semibold px-3 py-1 rounded-full bg-yellow-400 text-[#3f1f00] hover:bg-yellow-300 transition">+ Add</button>
+                    </div>
+                    <div id="active-program-button-list" class="space-y-2"></div>
+                </div>
+            </div>
+            <div class="p-4 bg-[#710000] border-t border-[#660000]">
+                <p class="text-[11px] uppercase tracking-widest text-gray-300">User</p>
+                <p class="mt-1 font-semibold text-white">Academic Aide</p>
+            </div>
+        </aside>
+        <main class="flex-1 overflow-y-auto p-8 custom-scrollbar bg-slate-50">
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <h2 class="text-3xl font-bold text-gray-900">Faculty Loading</h2>
+                        <p class="text-sm text-gray-500 mt-2">Track faculty workloads across active programs and sections.</p>
+                    </div>
+                    <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-600">
+                        <i data-lucide="activity" class="w-4 h-4"></i>
+                        <span>Loading overview</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 mt-6">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900">Faculty Assignments</h3>
+                        <p class="text-sm text-gray-500 mt-1">Manage instructor schedules and room assignments.</p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                        <div class="flex items-center gap-2 text-sm text-slate-600">
+                            <label for="sy-selector" class="font-semibold text-gray-600">Academic Year:</label>
+                            <select id="sy-selector" onchange="renderRoomSchedulePreview(); renderTimetable(); renderFacultyCalendar()" class="rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm outline-none"></select>
+                        </div>
+                        <button onclick="openLoadModal()" class="px-4 py-2 rounded-2xl bg-[#7f0000] text-white text-sm font-semibold hover:bg-[#660000] flex items-center">
+                            <i data-lucide="plus-circle" class="w-4 h-4 inline-block mr-2"></i>New Assignment
+                        </button>
+                    </div>
+                </div>
+                <div class="mt-6 overflow-x-auto">
+                    <table class="w-full text-left text-sm text-gray-600">
+                        <thead class="bg-gray-50 text-[11px] font-bold text-gray-500 uppercase border-b tracking-wider">
+                            <tr>
+                                <th class="p-4">Professor</th>
+                                <th class="p-4">Subject</th>
+                                <th class="p-4">Section</th>
+                                <th class="p-4">Schedule</th>
+                                <th class="p-4">Room</th>
+                                <th class="p-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="load-table" class="divide-y bg-white"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="modal-load" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 p-4">
+        <div class="w-full max-w-2xl rounded-3xl bg-white p-6 shadow-2xl border border-slate-200">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 id="modal-load-title" class="text-xl font-bold text-gray-900">Assign Class Load</h3>
+                    <p class="text-sm text-slate-500">Create or edit a faculty loading assignment.</p>
+                </div>
+                <button onclick="document.getElementById('modal-load').classList.add('hidden')" class="text-slate-500 hover:text-slate-800">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Professor</label>
+                    <select id="ld-prof" onchange="refreshTimeSlots()" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Subject</label>
+                    <select id="ld-sub" onchange="refreshTimeSlots()" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Section</label>
+                    <select id="ld-sec" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Room</label>
+                    <select id="ld-room" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Building</label>
+                    <select id="ld-building" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Day</label>
+                    <select id="ld-day" onchange="refreshTimeSlots()" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Load Type</label>
+                    <select id="ld-category" onchange="refreshTimeSlots()" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none">
+                        <option>Regular Load</option>
+                        <option>Part-Time Load</option>
+                        <option>Temporary Load</option>
+                        <option>Substitute Load</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Hours</label>
+                    <input id="ld-units" type="number" value="3" min="1" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none" />
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Time</label>
+                    <select id="ld-time" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none"></select>
+                </div>
+            </div>
+            <div class="mt-6 flex flex-wrap gap-3 justify-end">
+                <button onclick="document.getElementById('modal-load').classList.add('hidden')" class="px-4 py-3 rounded-2xl border border-slate-300 text-slate-700 hover:bg-slate-100">Cancel</button>
+                <button onclick="saveLoad()" id="save-load-button" class="px-4 py-3 rounded-2xl bg-[#7f0000] text-white hover:bg-[#660000]">Apply to Schedule</button>
+            </div>
+        </div>
+    </div>
+    <script type="module">
+        import { runApplicationBootstrapPipeline } from '../backend/app.py';
+        // Your inline UI paint functions go here
+    </script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+/* Custom Global Interface Stylesheet Settings */
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f3f4f6;
+}
+
+/* System Color Definition Anchors */
+.pup-maroon {
+    background-color: #800000;
+}
+
+.text-maroon {
+    color: #800000;
+}
+
+.border-maroon {
+    border-color: #800000;
+}
+
+/* Sidebar Interactivity Behaviors */
+.sidebar-item:hover {
+    background-color: rgba(255, 199, 44, 0.12);
+    border-left: 4px solid #FFC72C;
+}
+
+.active-nav {
+    background-color: rgba(255, 199, 44, 0.24);
+    border-left: 4px solid #FFC72C;
+    font-weight: 600;
+    color: #ffffff !important;
+}
+
+/* Table and Component Layout Stylings */
+.strikethrough-slot {
+    text-decoration: line-through;
+    color: #d1d5db;
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.vacant-slot {
+    background: repeating-linear-gradient(45deg, #f9fafb, #f9fafb 10px, #f3f4f6 10px, #f3f4f6 20px);
+}
+
+/* Custom Scrollbar Interface Optimization */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #ddd;
+    border-radius: 10px;
+}
+
+/* Fullscreen calendar mode */
+body.calendar-fullscreen aside {
+    display: none !important;
+}
+
+body.calendar-fullscreen main {
+    margin-left: 0 !important;
+    width: 100% !important;
+}
+
+body.calendar-fullscreen #app {
+    height: 100vh;
+}
+
+body.calendar-fullscreen {
+    overflow: hidden;
+}
+
+/* Separation of Complex Login Image Overlays */
+.login-background {
+    background-image: linear-gradient(rgba(15,23,42,0.75), rgba(15,23,42,0.85)), url('image1.jpg');
+    background-size: cover;
+    background-position: center;
+}

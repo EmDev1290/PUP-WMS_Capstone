@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PUP PQ Scheduler - Program Resources</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <div class="flex h-screen overflow-hidden">
+        <aside class="w-80 bg-[#7f0000] text-white flex flex-col justify-between border-r border-[#660000]">
+            <div>
+                <div class="p-6 flex items-center justify-between border-b border-[#660000]">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full overflow-hidden bg-white flex-shrink-0">
+                            <img src="PUP LOGO.png" onerror="this.src='https://placehold.co/150x150?text=PUP'" alt="Logo" class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <h2 class="text-sm font-bold tracking-wide uppercase">PUP PQ-SCHEDULER</h2>
+                            <p class="text-[10px] text-gray-200">Academic Management</p>
+                        </div>
+                    </div>
+                    <a href="index.html" class="text-gray-100 hover:text-gray-200 text-xs tracking-wide uppercase">LOGOUT</a>
+                </div>
+                <nav class="mt-6 space-y-1 px-4">
+                    <a href="dashboard.html" class="sidebar-item flex items-center px-4 py-3 text-sm rounded-lg transition-all space-x-3 text-gray-100 hover:text-white">
+                        <i data-lucide="grid" class="w-4 h-4 text-yellow-300"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="program-resources.html" class="sidebar-item active-nav flex items-center px-4 py-3 text-sm rounded-lg transition-all space-x-3 text-gray-100 hover:text-white">
+                        <i data-lucide="layers" class="w-4 h-4 text-yellow-300"></i>
+                        <span>Program Resources</span>
+                    </a>
+                    <a href="faculty-profile.html" class="sidebar-item flex items-center px-4 py-3 text-sm rounded-lg transition-all space-x-3 text-gray-100 hover:text-white">
+                        <i data-lucide="user-check" class="w-4 h-4 text-yellow-300"></i>
+                        <span>Faculty Profile</span>
+                    </a>
+                    <a href="faculty-loading.html" class="sidebar-item flex items-center px-4 py-3 text-sm rounded-lg transition-all space-x-3 text-gray-100 hover:text-white">
+                        <i data-lucide="package" class="w-4 h-4 text-yellow-300"></i>
+                        <span>Faculty Loading</span>
+                    </a>
+                    <a href="faculty-workloads.html" class="sidebar-item flex items-center px-4 py-3 text-sm rounded-lg transition-all space-x-3 text-gray-100 hover:text-white">
+                        <i data-lucide="book-open" class="w-4 h-4 text-yellow-300"></i>
+                        <span>Faculty Workloads</span>
+                    </a>
+                    <a href="section-timetables.html" class="sidebar-item flex items-center px-4 py-3 text-sm rounded-lg transition-all space-x-3 text-gray-100 hover:text-white">
+                        <i data-lucide="calendar" class="w-4 h-4 text-yellow-300"></i>
+                        <span>Section Timetables</span>
+                    </a>
+                    <a href="room-schedules.html" class="sidebar-item flex items-center px-4 py-3 text-sm rounded-lg transition-all space-x-3 text-gray-100 hover:text-white">
+                        <i data-lucide="map-pin" class="w-4 h-4 text-yellow-300"></i>
+                        <span>Room Schedules</span>
+                    </a>
+                </nav>
+                <div class="mt-8 px-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="text-[11px] font-semibold uppercase tracking-wider text-gray-300">Active Programs</div>
+                        <button onclick="addProgram()" class="text-[11px] font-semibold px-3 py-1 rounded-full bg-yellow-400 text-[#3f1f00] hover:bg-yellow-300 transition">+ Add</button>
+                    </div>
+                    <div id="active-program-button-list" class="space-y-2"></div>
+                </div>
+            </div>
+            <div class="p-4 bg-[#710000] border-t border-[#660000]">
+                <p class="text-[11px] uppercase tracking-widest text-gray-300">User</p>
+                <p class="mt-1 font-semibold text-white">Academic Aide</p>
+            </div>
+        </aside>
+        <main class="flex-1 overflow-y-auto p-8 custom-scrollbar bg-slate-50">
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+                    <div>
+                        <h2 class="text-3xl font-bold text-gray-900">Resource Registry</h2>
+                        <p class="text-sm text-gray-500 mt-2">Manage infrastructure for <span id="resource-program-name" class="text-maroon font-semibold">Information Technology</span></p>
+                    </div>
+                    <a href="add-faculty-profile.html" class="text-sm font-semibold text-blue-600">Add Faculty Profile</a>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mt-6">
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div class="rounded-2xl bg-blue-100 p-3 text-blue-700">
+                            <i data-lucide="users" class="w-5 h-5"></i>
+                        </div>
+                        <button onclick="window.location.href='add-faculty-profile.html'" class="text-sm font-semibold text-blue-600">Add Faculty</button>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900">Faculty Members</h3>
+                        <p class="text-sm text-slate-500">Teaching staff list.</p>
+                        <div class="mt-2 text-xs text-slate-500">Total faculty: <span id="resource-faculty-count" class="font-bold text-gray-900">0</span></div>
+                    </div>
+                    <input type="text" placeholder="Search faculty..." class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                    <div class="flex flex-wrap gap-2">
+                        <button id="btn-filter-all" onclick="filterFacultyView('all')" class="px-3 py-2 rounded-full text-xs font-semibold bg-blue-600 text-white">All</button>
+                        <button id="btn-filter-active" onclick="filterFacultyView('active')" class="px-3 py-2 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">Active</button>
+                        <button id="btn-filter-inactive" onclick="filterFacultyView('inactive')" class="px-3 py-2 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">Inactive</button>
+                        <button id="btn-filter-regular" onclick="filterFacultyView('regular')" class="px-3 py-2 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">Regular</button>
+                        <button id="btn-filter-designee" onclick="filterFacultyView('designee')" class="px-3 py-2 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">Designee</button>
+                        <button id="btn-filter-parttime" onclick="filterFacultyView('part-time')" class="px-3 py-2 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">Part-Time</button>
+                    </div>
+                    <div id="resource-faculty-list" class="space-y-4 max-h-[420px] overflow-y-auto pr-2 custom-scrollbar"></div>
+                </div>
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div class="rounded-2xl bg-orange-100 p-3 text-orange-700">
+                            <i data-lucide="book-open" class="w-5 h-5"></i>
+                        </div>
+                        <button onclick="addSubject()" class="text-sm font-semibold text-orange-600">Add Subject</button>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900">Course Curriculum</h3>
+                        <p class="text-sm text-slate-500">Official program subjects.</p>
+                        <div class="mt-2 text-xs text-slate-500">Total subjects: <span id="resource-subject-count" class="font-bold text-gray-900">0</span></div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                        <select id="resource-year-select" onchange="setResourceYearLevel(this.value)" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-orange-500">
+                            <option value="">All Years</option>
+                        </select>
+                        <select id="resource-semester-select" onchange="setResourceSemester(this.value)" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-orange-500">
+                            <option value="">All Semesters</option>
+                        </select>
+                    </div>
+                    <input type="text" placeholder="Search subjects..." class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-orange-500" />
+                    <div id="resource-subject-list" class="flex flex-col gap-3"></div>
+                </div>
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div class="rounded-2xl bg-emerald-100 p-3 text-emerald-700">
+                            <i data-lucide="layers" class="w-5 h-5"></i>
+                        </div>
+                        <button onclick="addSection()" class="text-sm font-semibold text-emerald-600">Add Section</button>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900">Active Sections</h3>
+                        <p class="text-sm text-slate-500">Class groupings for this term.</p>
+                        <div class="mt-2 text-xs text-slate-500">Total sections: <span id="resource-section-count" class="font-bold text-gray-900">0</span></div>
+                    </div>
+                    <div id="resource-section-list" class="space-y-3 max-h-[520px] overflow-y-auto pr-2 custom-scrollbar"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script type="module">
+        import { runApplicationBootstrapPipeline } from '../backend/app.py';
+        // Your inline UI paint functions go here
+    </script>
+</body>
+</html>

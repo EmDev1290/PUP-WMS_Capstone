@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PUP PQ Scheduler - Section Timetables</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <div class="flex h-screen overflow-hidden">
+        <aside class="w-80 bg-[#7f0000] text-white flex flex-col justify-between border-r border-[#660000]">
+            <div>
+                <div class="p-6 flex items-center justify-between border-b border-[#660000]">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full overflow-hidden bg-white flex-shrink-0">
+                            <img src="PUP LOGO.png" onerror="this.src='https://placehold.co/150x150?text=PUP'" alt="Logo" class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <h2 class="text-sm font-bold tracking-wide uppercase">PUP PQ-SCHEDULER</h2>
+                            <p class="text-[10px] text-gray-200">Academic Management</p>
+                        </div>
+                    </div>
+                    <a href="index.html" class="text-gray-100 hover:text-gray-200 text-xs tracking-wide uppercase">LOGOUT</a>
+                </div>
+                <nav class="mt-6 space-y-1 px-4">
+                    <a href="dashboard.html" class="sidebar-item flex items-center px-4 py-3 text-sm rounded-lg transition-all space-x-3 text-gray-100 hover:text-white">
+                        <i data-lucide="grid" class="w-4 h-4 text-yellow-300"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="program-resources.html" class="sidebar-item flex items-center px-4 py-3 text-sm rounded-lg transition-all space-x-3 text-gray-100 hover:text-white">
+                        <i data-lucide="layers" class="w-4 h-4 text-yellow-300"></i>
+                        <span>Program Resources</span>
+                    </a>
+                    <a href="faculty-profile.html" class="sidebar-item flex items-center px-4 py-3 text-sm rounded-lg transition-all space-x-3 text-gray-100 hover:text-white">
+                        <i data-lucide="user-check" class="w-4 h-4 text-yellow-300"></i>
+                        <span>Faculty Profile</span>
+                    </a>
+                    <a href="faculty-loading.html" class="sidebar-item flex items-center px-4 py-3 text-sm rounded-lg transition-all space-x-3 text-gray-100 hover:text-white">
+                        <i data-lucide="package" class="w-4 h-4 text-yellow-300"></i>
+                        <span>Faculty Loading</span>
+                    </a>
+                    <a href="faculty-workloads.html" class="sidebar-item flex items-center px-4 py-3 text-sm rounded-lg transition-all space-x-3 text-gray-100 hover:text-white">
+                        <i data-lucide="book-open" class="w-4 h-4 text-yellow-300"></i>
+                        <span>Faculty Workloads</span>
+                    </a>
+                    <a href="section-timetables.html" class="sidebar-item active-nav flex items-center px-4 py-3 text-sm rounded-lg transition-all space-x-3 text-gray-100 hover:text-white">
+                        <i data-lucide="calendar" class="w-4 h-4 text-yellow-300"></i>
+                        <span>Section Timetables</span>
+                    </a>
+                    <a href="room-schedules.html" class="sidebar-item flex items-center px-4 py-3 text-sm rounded-lg transition-all space-x-3 text-gray-100 hover:text-white">
+                        <i data-lucide="map-pin" class="w-4 h-4 text-yellow-300"></i>
+                        <span>Room Schedules</span>
+                    </a>
+                </nav>
+                <div class="mt-8 px-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="text-[11px] font-semibold uppercase tracking-wider text-gray-300">Active Programs</div>
+                        <button onclick="addProgram()" class="text-[11px] font-semibold px-3 py-1 rounded-full bg-yellow-400 text-[#3f1f00] hover:bg-yellow-300 transition">+ Add</button>
+                    </div>
+                    <div id="active-program-button-list" class="space-y-2"></div>
+                </div>
+            </div>
+            <div class="p-4 bg-[#710000] border-t border-[#660000]">
+                <p class="text-[11px] uppercase tracking-widest text-gray-300">User</p>
+                <p class="mt-1 font-semibold text-white">Academic Aide</p>
+            </div>
+        </aside>
+        <main class="flex-1 overflow-y-auto p-8 custom-scrollbar bg-slate-50">
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <h2 class="text-3xl font-bold text-gray-900">Section Timetables</h2>
+                        <p class="text-sm text-gray-500 mt-2">Assign sections to classrooms and manage the weekly timetable.</p>
+                    </div>
+                    <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-600">
+                        <i data-lucide="clock" class="w-4 h-4"></i>
+                        <span>Timetable grid</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 mt-6">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div class="flex flex-wrap gap-4 items-center">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Academic Year</label>
+                            <select id="sy-selector" onchange="renderTimetable()" class="p-2.5 border rounded-xl w-40 text-sm bg-gray-50"></select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Select Section</label>
+                            <select id="view-section-select" onchange="renderTimetable()" class="p-2.5 border rounded-xl w-40 text-sm bg-gray-50"></select>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="exportSectionTimetable()" class="px-4 py-3 border-2 border-[#7f0000] text-[#7f0000] rounded-2xl text-xs font-bold hover:bg-[#fef2f2] flex items-center">
+                            <i data-lucide="download-cloud" class="w-4 h-4 mr-2"></i>Export Section Schedule
+                        </button>
+                        <button onclick="toggleCalendarFullscreen('sections')" class="w-10 h-10 rounded-2xl border border-slate-300 text-slate-700 hover:bg-slate-100 flex items-center justify-center">
+                            <i data-lucide="maximize" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="timetable-container" class="mt-6"></div>
+            </div>
+        </main>
+    </div>
+    <<script type="module">
+        import { runApplicationBootstrapPipeline } from '../backend/app.py';
+        // Your inline UI paint functions go here
+    </script>
+</body>
+</html>
